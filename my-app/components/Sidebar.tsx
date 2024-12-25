@@ -35,10 +35,10 @@ export default function Sidebar() {
                 transition={{ delay: index * 0.1 }}
               >
                 <Link href={item.href} passHref>
-                  <a className="flex items-center py-2 px-4 hover:bg-blue-600 whitespace-nowrap">
+                  <motion.div className="flex items-center py-2 px-4 hover:bg-blue-600 whitespace-nowrap">
                     <item.icon className="mr-2" size={20} />
                     {item.name}
-                  </a>
+                  </motion.div>
                 </Link>
               </motion.div>
             ))}
@@ -54,4 +54,3 @@ export default function Sidebar() {
     </motion.div>
   )
 }
-

@@ -1,11 +1,12 @@
 'use client'
 
 import React, { useRef, useState } from 'react'
-import Background from '../components/Background'
-import Sidebar from '../components/Sidebar'
-import DrawableCanvas from '../components/DrawableCanvas'
-import StoryInput from '../components/StoryInput'
-import Book from '../components/Book'
+import Background from '../../components/Background'  // Correct path to Background
+import Sidebar from '../../components/Sidebar'  // Correct path to Sidebar
+import DrawableCanvas from '../../components/DrawableCanvas'  // Correct path to DrawableCanvas
+import StoryInput from '../../components/StoryInput'  // Correct path to StoryInput
+import Book from '../../components/Book'  // Correct path to Book
+
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function StoryCreator() {

@@ -1,14 +1,16 @@
 'use client'
 
+
 import React from 'react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
-import Background from './components/Background'
-import Sidebar from './components/Sidebar'
-import FeatureCard from './components/FeatureCard'
-import AnimatedCharacter from './components/AnimatedCharacter'
-import HeroSection from './components/HeroSection'
-import FloatingAnimation from './components/FloatingAnimation'
+import Background from '../components/Background' // Ensure the relative path is correct
+import Sidebar from '../components/Sidebar'
+import FeatureCard from '../components/FeatureCard'
+import AnimatedCharacter from '../components/AnimatedCharacter'
+import HeroSection from '../components/HeroSection'
+import FloatingAnimation from '../components/FloatingAnimation'
+
 
 export default function LandingPage() {
   return (
