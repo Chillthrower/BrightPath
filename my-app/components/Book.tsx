@@ -20,7 +20,9 @@ export default function Book() {
     if (isFlipping) return
     setIsFlipping(true)
     setFlipDirection(direction)
-    const newPage = direction === 'left' ? Math.max(0, currentPage - 2) : Math.min(pages.length - 2, currentPage + 2)
+
+    // Fix for turning pages and preventing skipping or infinite turning
+    const newPage = direction === 'left' ? Math.max(0, currentPage - 1) : Math.min(pages.length - 1, currentPage + 1)
     setTimeout(() => {
       setCurrentPage(newPage)
       setIsFlipping(false)
@@ -28,7 +30,7 @@ export default function Book() {
   }
 
   return (
-    <div className="book-wrapper py-16 px-8">
+    <>
       <style jsx global>{`
         .book-wrapper {
           perspective: 1500px;
@@ -36,7 +38,7 @@ export default function Book() {
         .book {
           position: relative;
           transform-style: preserve-3d;
-          transform: rotateX(10deg);
+          
         }
         .book-page {
           position: absolute;
@@ -83,107 +85,108 @@ export default function Book() {
           <ChevronLeft size={40} />
         </button>
 
-        <div className="book w-[800px] h-[500px] bg-yellow-100 rounded-lg shadow-2xl overflow-hidden relative">
-          <PeekingCharacters />
-          {/* Left page */}
-          <div className="absolute left-0 w-[400px] h-full bg-white p-8">
-            <div className="prose prose-lg">
-              <p>{pages[currentPage].content}</p>
+        <div className="book-wrapper">
+          <div className="book w-[800px] h-[500px] bg-yellow-100 rounded-lg shadow-2xl overflow-hidden relative">
+            <PeekingCharacters />
+            {/* Left page */}
+            <div className="absolute left-0 w-[400px] h-full bg-white p-8">
+              <div className="prose prose-lg">
+                <p>{pages[currentPage].content}</p>
+              </div>
             </div>
-          </div>
 
-          {/* Right page */}
-          <div className="absolute left-[400px] w-[400px] h-full bg-white p-8">
-            <div className="w-full h-full relative">
-              <Image
-                src={pages[currentPage + 1].image}
-                alt="Story illustration"
-                fill
-                className="object-cover rounded-lg"
-              />
+            {/* Right page */}
+            <div className="absolute left-[400px] w-[400px] h-full bg-white p-8">
+              <div className="w-full h-full relative">
+                <Image
+                  src={pages[currentPage + 1]?.image || "/placeholder.svg"}
+                  alt="Story illustration"
+                  fill
+                  className="object-cover rounded-lg"
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Animated flipping page */}
-          <AnimatePresence>
-            {isFlipping && (
-              <motion.div
-                className="book-page"
-                initial={{ 
-                  rotateY: flipDirection === 'right' ? 0 : -180,
-                  x: flipDirection === 'right' ? '100%' : '0%'
-                }}
-                animate={{ 
-                  rotateY: flipDirection === 'right' ? -180 : 0,
-                  x: flipDirection === 'right' ? '0%' : '100%'
-                }}
-                exit={{ 
-                  rotateY: flipDirection === 'right' ? -180 : 0,
-                  x: flipDirection === 'right' ? '0%' : '100%'
-                }}
-                transition={{ duration: 0.6, ease: "easeInOut" }}
-              >
-                <div className="book-page-content">
-                  {flipDirection === 'right' ? (
-                    <div className="prose prose-lg">
-                      <p>{pages[currentPage + 2]?.content || "The End"}</p>
-                    </div>
-                  ) : (
-                    <div className="w-full h-full relative">
-                      <Image
-                        src={pages[currentPage - 1]?.image || "/placeholder.svg"}
-                        alt="Story illustration"
-                        fill
-                        className="object-cover rounded-lg"
-                      />
-                    </div>
-                  )}
-                  <motion.div 
-                    className="page-fold"
-                    initial={{ transform: 'scaleX(0)' }}
-                    animate={{ transform: 'scaleX(1)' }}
-                    exit={{ transform: 'scaleX(0)' }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
-                  />
-                </div>
-                <div className="book-page-content book-page-back">
-                  {flipDirection === 'right' ? (
-                    <div className="w-full h-full relative">
-                      <Image
-                        src={pages[currentPage + 1].image}
-                        alt="Story illustration"
-                        fill
-                        className="object-cover rounded-lg"
-                      />
-                    </div>
-                  ) : (
-                    <div className="prose prose-lg">
-                      <p>{pages[currentPage].content}</p>
-                    </div>
-                  )}
-                  <motion.div 
-                    className="page-fold"
-                    initial={{ transform: 'scaleX(1)' }}
-                    animate={{ transform: 'scaleX(0)' }}
-                    exit={{ transform: 'scaleX(1)' }}
-                    transition={{ duration: 0.6, ease: "easeInOut" }}
-                  />
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+            {/* Animated flipping page */}
+            <AnimatePresence>
+              {isFlipping && (
+                <motion.div
+                  className="book-page"
+                  initial={{ 
+                    rotateY: flipDirection === 'right' ? 0 : -180,
+                    x: flipDirection === 'right' ? '100%' : '0%'
+                  }}
+                  animate={{ 
+                    rotateY: flipDirection === 'right' ? -180 : 0,
+                    x: flipDirection === 'right' ? '0%' : '100%'
+                  }}
+                  exit={{ 
+                    rotateY: flipDirection === 'right' ? -180 : 0,
+                    x: flipDirection === 'right' ? '0%' : '100%'
+                  }}
+                  transition={{ duration: 0.6, ease: "easeInOut" }}
+                >
+                  <div className="book-page-content">
+                    {flipDirection === 'right' ? (
+                      <div className="prose prose-lg">
+                        <p>{pages[currentPage + 1]?.content || "The End"}</p>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full relative">
+                        <Image
+                          src={pages[currentPage]?.image || "/placeholder.svg"}
+                          alt="Story illustration"
+                          fill
+                          className="object-cover rounded-lg"
+                        />
+                      </div>
+                    )}
+                    <motion.div 
+                      className="page-fold"
+                      initial={{ transform: 'scaleX(0)' }}
+                      animate={{ transform: 'scaleX(1)' }}
+                      exit={{ transform: 'scaleX(0)' }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                    />
+                  </div>
+                  <div className="book-page-content book-page-back">
+                    {flipDirection === 'right' ? (
+                      <div className="w-full h-full relative">
+                        <Image
+                          src={pages[currentPage + 1]?.image || "/placeholder.svg"}
+                          alt="Story illustration"
+                          fill
+                          className="object-cover rounded-lg"
+                        />
+                      </div>
+                    ) : (
+                      <div className="prose prose-lg">
+                        <p>{pages[currentPage]?.content}</p>
+                      </div>
+                    )}
+                    <motion.div 
+                      className="page-fold"
+                      initial={{ transform: 'scaleX(1)' }}
+                      animate={{ transform: 'scaleX(0)' }}
+                      exit={{ transform: 'scaleX(1)' }}
+                      transition={{ duration: 0.6, ease: "easeInOut" }}
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         <button
           onClick={() => turnPage('right')}
-          disabled={currentPage >= pages.length - 2 || isFlipping}
+          disabled={currentPage >= pages.length - 1 || isFlipping}
           className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           aria-label="Next page"
         >
           <ChevronRight size={40} />
         </button>
       </div>
-    </div>
+    </>
   )
 }
-
