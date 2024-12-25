@@ -12,8 +12,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 export default function StoryCreator() {
   const bookRef = useRef<HTMLDivElement>(null)
   const [showBook, setShowBook] = useState(false)
+  const [story, setStory] = useState('')
 
-  const handleSubmit = () => {
+  const handleSubmit = (storyText: string) => {
+    console.log("Pages: ", storyText)
+    setStory(storyText)
     setShowBook(true)
     setTimeout(() => {
       bookRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -47,7 +50,8 @@ export default function StoryCreator() {
               className="mt-16"
             >
               <h2 className="text-3xl font-bold text-blue-800 mb-8 font-serif text-center">Your Storybook</h2>
-              <Book />
+              {/* Pass the story data to the Book component */}
+              <Book storyData={story} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -55,4 +59,3 @@ export default function StoryCreator() {
     </div>
   )
 }
-

@@ -4,17 +4,18 @@ import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import PeekingCharacters from './PeekingCharacters'
 
-const pages = [
-  { content: "Chapter 1: The Adventure Begins", image: "/placeholder.svg" },
-  { content: "It was a bright and sunny day in the magical forest.", image: "/placeholder.svg" },
-  { content: "The friends gathered around the old oak tree.", image: "/placeholder.svg" },
-  { content: "Suddenly, they heard a mysterious sound.", image: "/placeholder.svg" },
-]
 
-export default function Book() {
+export default function Book({ storyData }: { storyData: string }) {
   const [currentPage, setCurrentPage] = useState(0)
   const [isFlipping, setIsFlipping] = useState(false)
   const [flipDirection, setFlipDirection] = useState<'left' | 'right'>('right')
+
+  console.log('Story data in Book component:', storyData);
+
+  const pages = storyData.response.split('\n\n').map((paragraph, index) => ({
+    content: paragraph.trim(),
+    image: "/placeholder.svg" // You can change this to a dynamic image URL if needed
+  }));
 
   const turnPage = (direction: 'left' | 'right') => {
     if (isFlipping) return
