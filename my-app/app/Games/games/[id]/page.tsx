@@ -52,7 +52,7 @@ export default function GamePage({ params }: { params: { id: string } }) {
         {renderGame()}
         <div className="mt-8 text-center">
           <Button
-            onClick={() => router.push('/')}
+            onClick={() => router.push('/Games')}
             className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full text-lg shadow-lg hover:shadow-xl transition-all duration-300"
           >
             Back to Games

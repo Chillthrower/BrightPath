@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image'
 import Link from 'next/link'
+import Sidebar from '@/components/Sidebar';
 
 const games = [
   {
@@ -88,6 +89,7 @@ export default function Home() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
+          <Sidebar />
           <motion.div
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -111,7 +113,8 @@ export default function Home() {
               animate={{ y: 0, opacity: 1 }}
               transition={{ delay: index * 0.1 }}
             >
-              <Link href={`/games/${game.id}`}>
+              <Link href={`Games/games/${game.id}`}>
+
                 <div className={`game-card relative overflow-hidden ${game.color} rounded-2xl p-6 shadow-lg hover:shadow-xl cursor-pointer h-64`}>
                   <div className="text-4xl mb-4">{game.icon}</div>
                   <h2 className="text-2xl font-bold text-gray-800 mb-2">
