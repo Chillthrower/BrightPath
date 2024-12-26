@@ -5,7 +5,7 @@ import { ChevronRight, ChevronLeft, Home, Gamepad2, Book, BarChart2, Settings } 
 
 const navItems = [
   { name: 'Home', icon: Home, href: '/' },
-  { name: 'Games', icon: Gamepad2, href: '#' },
+  { name: 'Games', icon: Gamepad2, href: '/Games' },
   { name: 'Stories', icon: Book, href: '/story-creator' },
   { name: 'Progress', icon: BarChart2, href: '#' },
   { name: 'Settings', icon: Settings, href: '#' },
