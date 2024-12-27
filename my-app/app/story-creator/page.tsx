@@ -26,8 +26,8 @@ export default function StoryCreator() {
       bookRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, 100)
   }
-  const navigateToQuiz = () => {
-    router.push('/quiz')
+  const navigateToQuiz = (storyText: string) => {
+    router.push(`/quiz?story=${encodeURIComponent(storyText.response)}`)
   }
   return (
     <div className="relative min-h-screen overflow-hidden bg-blue-200">
@@ -60,7 +60,7 @@ export default function StoryCreator() {
               <Book storyData={story} />
               <div className="mt-8 flex justify-center">
                 <Button
-                  onClick={navigateToQuiz}
+                  onClick={() => navigateToQuiz(story)}
                   className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full text-xl"
                 >
                   Take a Quiz!
