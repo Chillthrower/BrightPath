@@ -11,7 +11,7 @@ const navItems = [
   { name: 'Stories', icon: Book, href: '/story-creator' },
   { name: 'Learn', icon: Book, href: '/Learn_chatbot' },
   { name: 'Progress', icon: BarChart2, href: '#' },
-  { name: 'Settings', icon: Settings, href: '#' },
+  
 ]
 
 export default function Sidebar() {
