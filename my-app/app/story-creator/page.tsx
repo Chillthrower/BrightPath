@@ -1,15 +1,19 @@
 'use client'
 
 import React, { useRef, useState } from 'react'
+// import React, { useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Background from '../../components/Background'  // Correct path to Background
 import Sidebar from '../../components/Sidebar'  // Correct path to Sidebar
 import DrawableCanvas from '../../components/DrawableCanvas'  // Correct path to DrawableCanvas
 import StoryInput from '../../components/StoryInput'  // Correct path to StoryInput
 import Book from '../../components/Book'  // Correct path to Book
+import { Button } from '@/components/ui/button'
 
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function StoryCreator() {
+  const router = useRouter()
   const bookRef = useRef<HTMLDivElement>(null)
   const [showBook, setShowBook] = useState(false)
   const [story, setStory] = useState('')
@@ -22,7 +26,9 @@ export default function StoryCreator() {
       bookRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, 100)
   }
-
+  const navigateToQuiz = () => {
+    router.push('/quiz')
+  }
   return (
     <div className="relative min-h-screen overflow-hidden bg-blue-200">
       <Background />
@@ -52,6 +58,14 @@ export default function StoryCreator() {
               <h2 className="text-3xl font-bold text-blue-800 mb-8 font-serif text-center">Your Storybook</h2>
               {/* Pass the story data to the Book component */}
               <Book storyData={story} />
+              <div className="mt-8 flex justify-center">
+                <Button
+                  onClick={navigateToQuiz}
+                  className="bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-full text-xl"
+                >
+                  Take a Quiz!
+                </Button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
