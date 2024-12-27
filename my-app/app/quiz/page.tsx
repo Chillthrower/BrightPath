@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation' // Import to access query params
+import { motion } from 'framer-motion'
 import Background from '../../components/Background'
 import Sidebar from '../../components/Sidebar'
 import QuizBox from '../../components/QuizBox'
@@ -41,6 +42,45 @@ export default function QuizPage() {
   const [quizStarted, setQuizStarted] = useState(false)
   const [score, setScore] = useState(0)
   const [lastAnswerCorrect, setLastAnswerCorrect] = useState<boolean | null>(null)
+  const [loading, setLoading] = useState(false);
+  const [questions, setQuestions] = useState([]);
+
+  const searchParams = useSearchParams()
+  const story = searchParams.get('story') // Retrieve 'story' from query params
+
+  useEffect(() => {
+    if (story) {
+      console.log('Received story:', story);
+      fetchQuizQuestions(story);
+    }
+  }, [story]);
+
+  const fetchQuizQuestions = async (storyText: string) => {
+    setLoading(true);
+    try {
+      const response = await fetch('http://localhost:5000/QuizBot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: storyText }),
+      });
+
+      const data = await response.json();
+
+      const fetchedQuestions = data.response.map((item) => ({
+        question: item.question,
+        options: item.options,
+        correctAnswer: item.correctAnswer,
+      }))
+
+      console.log('Fetched Questions3 :', fetchedQuestions);
+
+      setQuestions(fetchedQuestions);
+    } catch (error) {
+      console.error('Error fetching questions:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const startQuiz = () => {
     setQuizStarted(true)
@@ -50,7 +90,8 @@ export default function QuizPage() {
   }
 
   const handleAnswer = (selectedOption: string) => {
-    const isCorrect = selectedOption === questions[currentQuestion].correctAnswer
+    const selectedLetter = selectedOption.charAt(0).toLowerCase()
+    const isCorrect = selectedLetter === questions[currentQuestion].correctAnswer
     setLastAnswerCorrect(isCorrect)
     if (isCorrect) {
       setScore(score + 1)
@@ -60,7 +101,6 @@ export default function QuizPage() {
         setCurrentQuestion(currentQuestion + 1)
         setLastAnswerCorrect(null)
       } else {
-        // Quiz finished
         setQuizStarted(false)
       }
     }, 1500)
@@ -105,4 +145,3 @@ export default function QuizPage() {
     </div>
   )
 }
-
