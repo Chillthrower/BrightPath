@@ -7,7 +7,7 @@ import re  # For regular expression to split the response
 app = Flask(__name__)
 CORS(app)
 
-genai.configure(api_key="")
+genai.configure(api_key="AIzaSyDQAIa2TUCQedlxNtBxUL-JBZYBv2y3yTo")
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 @app.route("/StoryTeller", methods=["POST"])
@@ -78,6 +78,15 @@ def parse_quiz_response(response):
             })
 
     return parsed_questions
+
+@app.route("/LearnBot", methods=["POST"])
+def learnBot():
+    input_data = request.get_json()
+    input_text = input_data.get("text", "")
+    
+    response = model.generate_content(f"Explain the following in a simple and fun way as if you're talking to a child aged 5 to 12. Use short, easy-to-understand sentences: {input_text}")
+    
+    return jsonify({"response": response.text})
 
 
 if __name__ == "__main__":

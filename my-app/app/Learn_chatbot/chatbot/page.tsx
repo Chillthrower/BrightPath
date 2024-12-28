@@ -12,6 +12,7 @@ export default function ChatbotPage() {
 
   useEffect(() => {
     const storedTopic = localStorage.getItem('learningTopic')
+    console.log("Chatbot: ", storedTopic)
     if (storedTopic) {
       setLearningTopic(JSON.parse(storedTopic))
     }
