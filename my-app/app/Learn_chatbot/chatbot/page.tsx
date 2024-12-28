@@ -63,7 +63,7 @@ export default function ChatbotPage() {
           <p className="text-xl text-center text-blue-500 mb-8 font-comic">
             Here's your custom explanation for the topic you chose! Ask questions or use your voice to learn more.
           </p>
-          {learningTopic && (
+          {/* {learningTopic && (
             <div className="mb-8 p-4 bg-green-100 rounded-2xl border-2 border-green-300">
               <h2 className="text-2xl font-bold text-green-600 mb-2 font-comic">Your Topic: {learningTopic.topic}</h2>
               <p className="text-lg text-green-500 font-comic">Subject: {learningTopic.subject}</p>
@@ -71,7 +71,7 @@ export default function ChatbotPage() {
                 <p className="text-lg text-green-500 mt-2 font-comic">Additional Details: {learningTopic.details}</p>
               )}
             </div>
-          )}
+          )} */}
           <ChatInterface />
         </motion.div>
       </main>

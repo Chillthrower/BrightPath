@@ -42,7 +42,7 @@ export default function ChatInterface() {
   };
 
   return (
-    <div className="bg-yellow-100 rounded-3xl p-6 h-[500px] flex flex-col border-4 border-yellow-300 shadow-lg">
+    <div className="bg-yellow-100 rounded-3xl p-6 h-[700px] flex flex-col border-4 border-yellow-300 shadow-lg">
       <div className="flex-grow overflow-y-auto mb-4 p-4 bg-white bg-opacity-50 rounded-2xl">
         {messages.map((message, index) => (
           <motion.div
