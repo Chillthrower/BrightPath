@@ -7,7 +7,7 @@ import re  # For regular expression to split the response
 app = Flask(__name__)
 CORS(app)
 
-genai.configure(api_key="AIzaSyDQAIa2TUCQedlxNtBxUL-JBZYBv2y3yTo")
+genai.configure(api_key="")
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 @app.route("/StoryTeller", methods=["POST"])
