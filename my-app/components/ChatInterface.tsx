@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import VoiceRecorder from "./VoiceRecorder"
+import VoiceRecorder from './VoiceRecorder'
 
 export default function ChatInterface() {
   const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>([])
@@ -23,7 +23,7 @@ export default function ChatInterface() {
   }
 
   return (
-    <div className="bg-gradient-to-b from-blue-100 via-yellow-100 to-pink-100 rounded-3xl p-6 h-[500px] flex flex-col border-4 border-green-200 shadow-lg">
+    <div className="bg-yellow-100 rounded-3xl p-6 h-[500px] flex flex-col border-4 border-yellow-300 shadow-lg">
       <div className="flex-grow overflow-y-auto mb-4 p-4 bg-white bg-opacity-50 rounded-2xl">
         {messages.map((message, index) => (
           <motion.div
@@ -45,10 +45,15 @@ export default function ChatInterface() {
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Type your question here..."
-            className="flex-grow mr-2 border-4 border-blue-200 font-comic text-lg rounded-full px-4 py-2 bg-white"
+            className="flex-grow mr-2 border-2 border-blue-300 font-comic text-lg rounded-full px-4 py-2 bg-white focus:border-pink-300 focus:ring focus:ring-pink-200 focus:ring-opacity-50"
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
           />
-          <Button onClick={handleSendMessage} className="bg-gradient-to-r from-pink-300 to-yellow-300 hover:from-blue-300 hover:to-green-300 font-comic text-lg rounded-full px-6 text-white transform transition-transform duration-200 hover:scale-105">Send</Button>
+          <Button 
+            onClick={handleSendMessage} 
+            className="bg-pink-400 hover:bg-pink-500 text-white font-comic text-lg rounded-full px-6 transform transition-transform duration-200 hover:scale-105"
+          >
+            Send
+          </Button>
         </div>
         <motion.div
           whileHover={{ scale: 1.1, rotate: [0, -10, 10, -10, 10, 0] }}
