@@ -1,16 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import VoiceRecorder from "./VoiceRecorder";
+import { ImageIcon } from 'lucide-react';
+
+interface Message {
+  text: string;
+  isUser: boolean;
+  image?: string;
+}
 
 export default function ChatInterface() {
-  const [messages, setMessages] = useState<{ text: string; isUser: boolean }[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSendMessage = async () => {
-    if (inputText.trim()) {
-      setMessages([...messages, { text: inputText, isUser: true }]);
+    if (inputText.trim() || selectedImage) {
+      const newMessage: Message = { text: inputText, isUser: true };
+      if (selectedImage) {
+        newMessage.image = URL.createObjectURL(selectedImage);
+      }
+      setMessages([...messages, newMessage]);
 
       try {
         const response = await fetch("http://127.0.0.1:5000/LearnBot", {
@@ -34,7 +47,19 @@ export default function ChatInterface() {
       }
 
       setInputText("");
+      setSelectedImage(null);
     }
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedImage(file);
+    }
+  };
+
+  const triggerImageUpload = () => {
+    fileInputRef.current?.click();
   };
 
   const handleTranscript = (transcript: string) => {
@@ -54,12 +79,17 @@ export default function ChatInterface() {
               message.isUser ? "bg-blue-200 ml-auto" : "bg-green-200"
             } max-w-[80%] font-comic text-lg shadow-md transform`}
           >
-            {message.text}
+            {message.image && (
+              <div className="mb-2">
+                <img src={message.image} alt="Uploaded image" className="rounded-lg max-w-full h-auto" />
+              </div>
+            )}
+            <div>{message.text}</div>
           </motion.div>
         ))}
       </div>
       <div className="flex flex-col space-y-4">
-        <div className="flex">
+        <div className="flex items-center">
           <Input
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
@@ -67,6 +97,19 @@ export default function ChatInterface() {
             className="flex-grow mr-2 border-2 border-blue-300 font-comic text-lg rounded-full px-4 py-2 bg-white focus:border-pink-300 focus:ring focus:ring-pink-200 focus:ring-opacity-50"
             onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
           />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            ref={fileInputRef}
+            className="hidden"
+          />
+          <Button
+            onClick={triggerImageUpload}
+            className="bg-green-400 hover:bg-green-500 text-white font-comic text-lg rounded-full p-2 mr-2 transform transition-transform duration-200 hover:scale-105"
+          >
+            <ImageIcon size={24} />
+          </Button>
           <Button
             onClick={handleSendMessage}
             className="bg-pink-400 hover:bg-pink-500 text-white font-comic text-lg rounded-full px-6 transform transition-transform duration-200 hover:scale-105"
@@ -74,6 +117,12 @@ export default function ChatInterface() {
             Send
           </Button>
         </div>
+        {selectedImage && (
+          <div className="flex items-center">
+            <span className="text-blue-600 font-comic mr-2">Image selected:</span>
+            <img src={URL.createObjectURL(selectedImage)} alt="Selected image" className="w-12 h-12 rounded-lg" />
+          </div>
+        )}
         <motion.div
           whileHover={{ scale: 1.1, rotate: [0, -10, 10, -10, 10, 0] }}
           transition={{ duration: 0.5 }}
