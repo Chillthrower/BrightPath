@@ -18,11 +18,44 @@ export default function ChatInterface() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSendMessage = async () => {
-    if (inputText.trim() || selectedImage) {
-      const newMessage: Message = { text: inputText, isUser: true };
-      if (selectedImage) {
-        newMessage.image = URL.createObjectURL(selectedImage);
-      }
+    const newMessage: Message = { text: inputText, isUser: true };
+    let imageBase64: string | null = null;
+
+    if (selectedImage) {
+      const reader = new FileReader();
+      reader.readAsDataURL(selectedImage);
+      reader.onloadend = async () => {
+        imageBase64 = reader.result as string;
+        newMessage.image = imageBase64;
+
+        setMessages([...messages, newMessage]);
+
+        try {
+          const response = await fetch("http://127.0.0.1:5000/LearnBot", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ text: inputText, image: imageBase64 }),
+          });
+
+          const data = await response.json();
+          const botResponse = data.response || "Sorry, I didn't understand that.";
+
+          setMessages((prev) => [...prev, { text: botResponse, isUser: false }]);
+        } catch (error) {
+          console.error("Error communicating with the server:", error);
+          setMessages((prev) => [
+            ...prev,
+            { text: "An error occurred. Please try again later.", isUser: false },
+          ]);
+        }
+
+        setInputText("");
+        setSelectedImage(null);
+      };
+    } else if (inputText.trim()) {
+      newMessage.text = inputText;
       setMessages([...messages, newMessage]);
 
       try {
@@ -47,7 +80,39 @@ export default function ChatInterface() {
       }
 
       setInputText("");
-      setSelectedImage(null);
+    } else if (selectedImage) {
+      const reader = new FileReader();
+      reader.readAsDataURL(selectedImage);
+      reader.onloadend = async () => {
+        imageBase64 = reader.result as string;
+        newMessage.image = imageBase64;
+
+        setMessages([...messages, newMessage]);
+
+        try {
+          const response = await fetch("http://127.0.0.1:5000/LearnBot", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ image: imageBase64 }),
+          });
+
+          const data = await response.json();
+          const botResponse = data.response || "Sorry, I didn't understand that.";
+
+          setMessages((prev) => [...prev, { text: botResponse, isUser: false }]);
+        } catch (error) {
+          console.error("Error communicating with the server:", error);
+          setMessages((prev) => [
+            ...prev,
+            { text: "An error occurred. Please try again later.", isUser: false },
+          ]);
+        }
+
+        setInputText("");
+        setSelectedImage(null);
+      };
     }
   };
 
@@ -55,6 +120,10 @@ export default function ChatInterface() {
     const file = e.target.files?.[0];
     if (file) {
       setSelectedImage(file);
+      // Reset the file input field after selecting an image to allow new uploads
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''; // Reset the file input field
+      }
     }
   };
 

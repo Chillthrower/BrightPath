@@ -2,12 +2,16 @@ from flask import Flask, request, jsonify
 from langchain_community.llms import Ollama
 from flask_cors import CORS
 import google.generativeai as genai
-import re  # For regular expression to split the response
+import re
+from PIL import Image
+import base64
+from io import BytesIO
+
 
 app = Flask(__name__)
 CORS(app)
 
-genai.configure(api_key="AIzaSyC3opISLmYZ7d_4t6Ize4JnkoEOnACIX6E")
+genai.configure(api_key="AIzaSyDQAIa2TUCQedlxNtBxUL-JBZYBv2y3yTo")
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 @app.route("/StoryTeller", methods=["POST"])
@@ -83,11 +87,37 @@ def parse_quiz_response(response):
 def learnBot():
     input_data = request.get_json()
     input_text = input_data.get("text", "")
-    
-    response = model.generate_content(f"Explain the following in a simple and fun way as if you're talking to a child aged 5 to 12. Use short, easy-to-understand sentences: {input_text}")
-    
-    return jsonify({"response": response.text})
+    image_base64 = input_data.get("image", "")
 
+    image = None
+    if image_base64:
+        try:
+            if image_base64.startswith("data:image"):
+                image_base64 = image_base64.split(",")[1]
+
+            image_data = base64.b64decode(image_base64)
+            image = Image.open(BytesIO(image_data))
+        except Exception as e:
+            print("Error decoding or verifying image:", e)
+            return jsonify({"error": "Invalid image data"}), 400
+
+    try:
+        if image and input_text:
+            prompt = f"Explain this image and the following text in a simple way for children: {input_text}"
+            response = model.generate_content([prompt, image])
+        elif image:
+            prompt = "Explain this image in a simple way for children."
+            response = model.generate_content([prompt, image])
+        elif input_text:
+            prompt = f"Explain this text in a simple way for children: {input_text}"
+            response = model.generate_content(prompt)
+        else:
+            return jsonify({"error": "No valid input provided"}), 400
+
+        return jsonify({"response": response.text})
+    except Exception as e:
+        print("Error generating response:", e)
+        return jsonify({"error": "Failed to generate response"}), 500
 
 if __name__ == "__main__":
     app.run(debug=True)
