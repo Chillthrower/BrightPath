@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import Background from '@/components/Background'
 import Sidebar from '@/components/Sidebar'
+import Link from 'next/link'  // Add this import
 
 export default function SignupPage() {
   const [username, setUsername] = useState('')
@@ -16,9 +17,12 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [agreeTerms, setAgreeTerms] = useState(false)
 
+  const router = useRouter()  // Hook for navigation
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Signup submitted:', { username, email, password, confirmPassword, agreeTerms })
+    // Redirect to the login page after form submission
+    router.push('/UserAuth/login')
   }
 
   return (
@@ -65,7 +69,7 @@ export default function SignupPage() {
             transition={{ delay: 0.4 }}
           >
             <label htmlFor="email" className="block text-lg font-medium text-gray-700">
-                Email
+              Email
             </label>
             <Input
               id="email"
@@ -155,4 +159,3 @@ export default function SignupPage() {
     </div>
   )
 }
-

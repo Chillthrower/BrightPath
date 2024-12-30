@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation' // Import useRouter for redirection
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Input } from "@/components/ui/input"
@@ -11,10 +12,15 @@ import Sidebar from '@/components/Sidebar'
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const router = useRouter() // Initialize the useRouter hook for redirection
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
+
     console.log('Login submitted:', { email, password })
+    
+    // Simulating successful login and redirecting to homepage
+    router.push('/') // This will navigate to the homepage after successful login
   }
 
   return (
@@ -97,4 +103,3 @@ export default function LoginPage() {
     </div>
   )
 }
-
