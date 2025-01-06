@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import confetti from 'canvas-confetti'
 import { Button } from "@/components/ui/button"
 import {
@@ -16,8 +16,8 @@ import { CheckCircle, XCircle } from 'lucide-react'
 
 const levels = [
   { name: 'Level 1', operations: ['+', '-'], maxNumber: 10, questions: 5, time: 60 },
-  { name: 'Level 2', operations: ['+', '-', '*'], maxNumber: 20, questions: 7, time: 90 },
-  { name: 'Level 3', operations: ['+', '-', '*', '/'], maxNumber: 50, questions: 10, time: 120 },
+  { name: 'Level 2', operations: ['+', '-', '*'], maxNumber: 15, questions: 7, time: 90 },
+  { name: 'Level 3', operations: ['+', '-', '*'], maxNumber: 20, questions: 10, time: 120 },
 ]
 
 export default function BasicArithmeticGame() {
@@ -28,6 +28,8 @@ export default function BasicArithmeticGame() {
   const [timeLeft, setTimeLeft] = useState(levels[currentLevel].time)
   const [gameOver, setGameOver] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const [correctAnswers, setCorrectAnswers] = useState(0)
+  const [incorrectAnswers, setIncorrectAnswers] = useState(0)
 
   useEffect(() => {
     if (timeLeft > 0 && !gameOver) {
@@ -48,9 +50,9 @@ export default function BasicArithmeticGame() {
     let num1 = Math.floor(Math.random() * maxNumber) + 1
     let num2 = Math.floor(Math.random() * maxNumber) + 1
 
-    if (operation === '/') {
-      num2 = Math.floor(Math.random() * (num1 - 1)) + 1
-      num1 = num1 * num2
+    if (operation === '*') {
+      num1 = Math.floor(Math.random() * 5) + 1 // Smaller multipliers for simplicity
+      num2 = Math.floor(Math.random() * 5) + 1
     }
 
     setQuestion(`${num1} ${operation} ${num2} = ?`)
@@ -61,28 +63,33 @@ export default function BasicArithmeticGame() {
   const handleSubmit = () => {
     const correctAnswer = eval(question.replace('=', '').replace('?', ''))
     const isCorrect = parseInt(answer) === correctAnswer
-    setFeedback(isCorrect ? 'Correct!' : 'Incorrect. Try again!')
+
     if (isCorrect) {
+      setFeedback('Correct!')
+      setCorrectAnswers(correctAnswers + 1)
       setScore(score + 1)
-      if (score + 1 === levels[currentLevel].questions) {
-        if (currentLevel < levels.length - 1) {
-          setCurrentLevel(currentLevel + 1)
-          setScore(0)
-          setTimeLeft(levels[currentLevel + 1].time)
-        } else {
-          endGame()
-        }
+    } else {
+      setFeedback('Incorrect. Try again!')
+      setIncorrectAnswers(incorrectAnswers + 1)
+    }
+
+    if (score + 1 === levels[currentLevel].questions) {
+      if (currentLevel < levels.length - 1) {
+        setCurrentLevel(currentLevel + 1)
+        setScore(0)
+        setTimeLeft(levels[currentLevel + 1].time)
       } else {
-        setTimeout(generateQuestion, 1500)
+        endGame()
       }
     } else {
-      setTimeout(() => setFeedback(null), 1500)
+      setTimeout(generateQuestion, 1500)
     }
     setAnswer('')
   }
 
   const endGame = () => {
     setGameOver(true)
+    storeGameData()
     if (score === levels[currentLevel].questions && currentLevel === levels.length - 1) {
       triggerConfetti()
     }
@@ -94,6 +101,29 @@ export default function BasicArithmeticGame() {
       spread: 70,
       origin: { y: 0.6 }
     })
+  }
+
+  const storeGameData = () => {
+    const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
+    const gameData = {
+      level: levels[currentLevel].name,
+      score,
+      correctAnswers,
+      incorrectAnswers,
+      totalQuestions: levels[currentLevel].questions,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Get existing data from localStorage
+    const storedData = JSON.parse(localStorage.getItem('arithmeticGameScores') || '{}');
+
+    // If data for today exists, update it; otherwise, create new
+    const updatedData = {
+      ...storedData,
+      [today]: [{ ...gameData, updatedAt: new Date().toISOString() }],
+    };
+
+    localStorage.setItem('arithmeticGameScores', JSON.stringify(updatedData));
   }
 
   return (
@@ -111,13 +141,7 @@ export default function BasicArithmeticGame() {
             <DialogHeader>
               <DialogTitle>How to Play Basic Arithmetic Adventure</DialogTitle>
               <DialogDescription>
-                1. Solve the arithmetic problem presented.<br/>
-                2. Type your answer in the input field.<br/>
-                3. Click 'Submit' to check your answer.<br/>
-                4. Complete all questions in each level to advance.<br/>
-                5. There are 3 levels with increasing difficulty.<br/>
-                6. Win the game by completing all levels before time runs out!<br/>
-                Have fun and improve your math skills!
+                Solve the arithmetic problems to progress through levels. Answer all questions correctly before time runs out to win!
               </DialogDescription>
             </DialogHeader>
           </DialogContent>
@@ -132,7 +156,7 @@ export default function BasicArithmeticGame() {
             onChange={(e) => setAnswer(e.target.value)}
             className="border-2 border-gray-300 rounded px-4 py-2 mb-4"
           />
-          <Button 
+          <Button
             onClick={handleSubmit}
             className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded ml-4"
           >
@@ -142,7 +166,6 @@ export default function BasicArithmeticGame() {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
               className={`mt-4 text-xl ${feedback.includes('Correct') ? 'text-green-500' : 'text-red-500'}`}
             >
               {feedback}
@@ -155,31 +178,22 @@ export default function BasicArithmeticGame() {
           <p className="text-xl mb-4">
             Game Over! Your final score: {score}/{levels[currentLevel].questions}
           </p>
-          {score === levels[currentLevel].questions && currentLevel === levels.length - 1 ? (
-            <motion.div
-              className="text-2xl font-bold text-green-500"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              🎉 Congratulations! You've completed all levels! 🎉
-            </motion.div>
-          ) : (
-            <Button 
-              onClick={() => {
-                setCurrentLevel(0)
-                setScore(0)
-                setTimeLeft(levels[0].time)
-                setGameOver(false)
-                generateQuestion()
-              }}
-              className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
-            >
-              Play Again
-            </Button>
-          )}
+          <p className="text-xl mb-4">Correct Answers: {correctAnswers}</p>
+          <p className="text-xl mb-4">Incorrect Answers: {incorrectAnswers}</p>
+          <Button
+            onClick={() => {
+              setCurrentLevel(0)
+              setScore(0)
+              setTimeLeft(levels[0].time)
+              setGameOver(false)
+              generateQuestion()
+            }}
+            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+          >
+            Play Again
+          </Button>
         </div>
       )}
     </div>
   )
 }
-

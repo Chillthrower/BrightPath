@@ -26,23 +26,49 @@ export default function MusicalPatternsGame() {
   const [pattern, setPattern] = useState<string[]>([])
   const [playerPattern, setPlayerPattern] = useState<string[]>([])
   const [isPlaying, setIsPlaying] = useState(false)
-  const [score, setScore] = useState(0)
+  const [gameData, setGameData] = useState(() => {
+    // Retrieve the game data from localStorage or initialize it if not present
+    const storedGameData = localStorage.getItem('MusicalPatternsGame')
+    return storedGameData
+      ? JSON.parse(storedGameData)
+      : { score: 0, totalCorrect: 0, totalIncorrect: 0 }
+  })
   const [gameOver, setGameOver] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
+  const [timeRemaining, setTimeRemaining] = useState<number>(30) // 30 seconds timer for the entire level
+  const [timerActive, setTimerActive] = useState<boolean>(false)
 
   useEffect(() => {
     generatePattern()
   }, [currentLevel])
 
+  useEffect(() => {
+    // Save game data to localStorage every time it changes
+    localStorage.setItem('MusicalPatternsGame', JSON.stringify(gameData))
+  }, [gameData])
+
+  useEffect(() => {
+    if (timerActive && timeRemaining > 0) {
+      const timer = setInterval(() => {
+        setTimeRemaining(prev => prev - 1)
+      }, 1000)
+      return () => clearInterval(timer)
+    } else if (timeRemaining === 0) {
+      handleGameOver()
+    }
+  }, [timerActive, timeRemaining])
+
   const generatePattern = () => {
-    const newPattern = Array.from({ length: levels[currentLevel].patternLength }, () => 
+    setTimeRemaining(30) // Reset the timer for the new level
+    const newPattern = Array.from({ length: levels[currentLevel].patternLength }, () =>
       instruments[Math.floor(Math.random() * instruments.length)]
     )
     setPattern(newPattern)
     setPlayerPattern([])
     setIsPlaying(true)
     playPattern(newPattern)
+    setTimerActive(true) // Start the timer when a new pattern is generated
   }
 
   const playPattern = async (patternToPlay: string[]) => {
@@ -56,27 +82,39 @@ export default function MusicalPatternsGame() {
   }
 
   const handleInstrumentClick = (instrument: string) => {
-    if (isPlaying) return
-    
+    if (isPlaying || timeRemaining === 0) return
+
     const newPlayerPattern = [...playerPattern, instrument]
     setPlayerPattern(newPlayerPattern)
 
     if (newPlayerPattern.length === pattern.length) {
       const correct = newPlayerPattern.every((instrument, index) => instrument === pattern[index])
       setIsCorrect(correct)
+
       if (correct) {
-        setScore(score + 1)
+        const newGameData = {
+          ...gameData,
+          score: gameData.score + 1,
+          totalCorrect: gameData.totalCorrect + 1,
+        }
+        setGameData(newGameData)
+
         setFeedback('Correct! Great job!')
-        if (score + 1 === 3 && currentLevel < levels.length - 1) {
+        if (gameData.score + 1 === 3 && currentLevel < levels.length - 1) {
           setCurrentLevel(currentLevel + 1)
-          setScore(0)
-        } else if (score + 1 === 3 && currentLevel === levels.length - 1) {
+          setGameData(prev => ({ ...prev, score: 0 })) // Reset score after completing level
+        } else if (gameData.score + 1 === 3 && currentLevel === levels.length - 1) {
           setGameOver(true)
           triggerConfetti()
         } else {
           setTimeout(generatePattern, 1500)
         }
       } else {
+        const newGameData = {
+          ...gameData,
+          totalIncorrect: gameData.totalIncorrect + 1,
+        }
+        setGameData(newGameData)
         setFeedback('Oops! Try again!')
         setTimeout(() => {
           setIsCorrect(null)
@@ -84,6 +122,12 @@ export default function MusicalPatternsGame() {
         }, 1500)
       }
     }
+  }
+
+  const handleGameOver = () => {
+    setGameOver(true)
+    setTimerActive(false)
+    triggerConfetti()
   }
 
   const triggerConfetti = () => {
@@ -99,7 +143,10 @@ export default function MusicalPatternsGame() {
       <h2 className="text-3xl font-bold mb-4 text-blue-600">Musical Patterns Game</h2>
       <div className="flex justify-between items-center mb-4">
         <p className="text-xl">{levels[currentLevel].name}</p>
-        <p className="text-xl">Score: {score}/3</p>
+        <p className="text-xl">Score: {gameData.score}/3</p>
+        <p className="text-xl">Correct: {gameData.totalCorrect}</p>
+        <p className="text-xl">Incorrect: {gameData.totalIncorrect}</p>
+        <p className="text-xl">Time Remaining: {timeRemaining}s</p>
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline">How to Play</Button>
@@ -128,7 +175,7 @@ export default function MusicalPatternsGame() {
               onClick={() => handleInstrumentClick(instrument)}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              disabled={isPlaying}
+              disabled={isPlaying || timeRemaining === 0}
             >
               {instrument}
             </motion.button>
@@ -163,13 +210,12 @@ export default function MusicalPatternsGame() {
       ) : (
         <Button 
           onClick={generatePattern} 
-          disabled={isPlaying}
+          disabled={isPlaying || timeRemaining === 0}
           className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
         >
-          {score === 0 ? 'Start Game' : 'Next Pattern'}
+          {gameData.score === 0 ? 'Start Game' : 'Next Pattern'}
         </Button>
       )}
     </div>
   )
 }
-

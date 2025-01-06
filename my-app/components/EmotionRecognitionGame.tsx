@@ -28,37 +28,63 @@ interface EmotionItem {
 
 export default function EmotionRecognitionGame() {
   const [items, setItems] = useState<EmotionItem[]>([])
-  const [slots, setSlots] = useState<typeof emotions[]>([])
-  const [score, setScore] = useState(0)
+  const [correctAnswers, setCorrectAnswers] = useState(0)
+  const [incorrectAnswers, setIncorrectAnswers] = useState(0)
+  const [score, setScore] = useState(0) // The final score
   const [gameOver, setGameOver] = useState(false)
   const [feedback, setFeedback] = useState<{ message: string, isCorrect: boolean } | null>(null)
   const [selectedItem, setSelectedItem] = useState<EmotionItem | null>(null)
 
+  // Load saved game state from localStorage
   useEffect(() => {
-    startNewGame()
+    const savedState = localStorage.getItem('emotionGameScores')
+    const today = new Date().toISOString().split('T')[0] // Get today's date (yyyy-mm-dd)
+
+    if (savedState) {
+      const parsedState = JSON.parse(savedState)
+      const todayState = parsedState[today]
+      if (todayState) {
+        console.log('Loaded saved game state for today:', todayState) // Debugging line
+        setCorrectAnswers(todayState.correctAnswers || 0)
+        setIncorrectAnswers(todayState.incorrectAnswers || 0)
+        setScore(todayState.score || 0)
+        setGameOver(todayState.gameOver || false)
+        setFeedback(todayState.feedback || null)
+      } else {
+        startNewGame() // Start a new game if no state for today
+      }
+    } else {
+      startNewGame() // Start a new game if no saved state exists
+    }
   }, [])
 
+  // Start a new game
   const startNewGame = () => {
     const gameEmotions = emotions.slice(0, 4)
     const newItems = gameEmotions.map((emotion, index) => ({ id: index, emotion }))
-    const newSlots = [...gameEmotions].sort(() => Math.random() - 0.5)
     setItems(newItems)
-    setSlots(newSlots)
+    setCorrectAnswers(0)
+    setIncorrectAnswers(0)
     setScore(0)
     setGameOver(false)
     setFeedback(null)
     setSelectedItem(null)
+    saveGameState(0, 0, 0, false, null) // Save with zero scores initially
+    console.log('New game started and state saved') // Debugging line
   }
 
+  // Handle selecting an emotion item
   const handleItemClick = (item: EmotionItem) => {
     setSelectedItem(item)
   }
 
+  // Handle selecting a slot and checking for correct match
   const handleSlotClick = (targetEmotion: typeof emotions[0]) => {
     if (!selectedItem) return
 
     if (selectedItem.emotion.name === targetEmotion.name) {
       setItems(items.filter(i => i.id !== selectedItem.id))
+      setCorrectAnswers(correctAnswers + 1)
       setScore(score + 1)
       setFeedback({ message: "Correct! Great job!", isCorrect: true })
       if (items.length === 1) {
@@ -66,12 +92,15 @@ export default function EmotionRecognitionGame() {
         triggerConfetti()
       }
     } else {
+      setIncorrectAnswers(incorrectAnswers + 1)
+      setScore(score - 1)
       setFeedback({ message: "Oops! Try again!", isCorrect: false })
       shakeAnimation()
     }
     setSelectedItem(null)
   }
 
+  // Trigger confetti on game completion
   const triggerConfetti = () => {
     confetti({
       particleCount: 100,
@@ -80,6 +109,7 @@ export default function EmotionRecognitionGame() {
     })
   }
 
+  // Shake animation when an incorrect match is made
   const shakeAnimation = () => {
     const gameArea = document.getElementById('emotion-game-area')
     if (gameArea) {
@@ -88,11 +118,42 @@ export default function EmotionRecognitionGame() {
     }
   }
 
+  // Save the current game state to localStorage (including correct/incorrect answers, game over state, feedback)
+  const saveGameState = (correctAnswers: number, incorrectAnswers: number, score: number, gameOver: boolean, feedback: { message: string, isCorrect: boolean } | null) => {
+    const today = new Date().toISOString().split('T')[0] // Get today's date (yyyy-mm-dd)
+
+    const gameState = {
+      correctAnswers,
+      incorrectAnswers,
+      score,
+      gameOver,
+      feedback,
+    }
+
+    // Load current saved game scores from localStorage
+    const savedScores = localStorage.getItem('emotionGameScores')
+    const gameScores = savedScores ? JSON.parse(savedScores) : {}
+
+    // Save today's game state
+    gameScores[today] = gameState
+
+    // Save to localStorage
+    localStorage.setItem('emotionGameScores', JSON.stringify(gameScores))
+    console.log('Game state saved for today:', gameState) // Debugging line
+  }
+
+  // Update the game state in localStorage whenever it changes
+  useEffect(() => {
+    if (correctAnswers || incorrectAnswers || feedback || gameOver) {
+      console.log('State updated, saving to localStorage...') // Debugging line
+      saveGameState(correctAnswers, incorrectAnswers, score, gameOver, feedback)
+    }
+  }, [correctAnswers, incorrectAnswers, feedback, gameOver, score])
+
   return (
     <div className="text-center">
       <h2 className="text-3xl font-bold mb-4 text-blue-600">Emotion Recognition Game</h2>
       <div className="flex justify-between items-center mb-4">
-        <p className="text-xl">Score: {score}</p>
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline">How to Play</Button>
@@ -101,10 +162,10 @@ export default function EmotionRecognitionGame() {
             <DialogHeader>
               <DialogTitle>How to Play Emotion Recognition Game</DialogTitle>
               <DialogDescription>
-                1. Click on an emoji to select it.<br/>
-                2. Then click on the matching emotion word.<br/>
-                3. Match all emotions correctly to win the game.<br/>
-                4. If you make a mistake, you can try again!<br/>
+                1. Click on an emoji to select it.<br />
+                2. Then click on the matching emotion word.<br />
+                3. Match all emotions correctly to win the game.<br />
+                4. If you make a mistake, you can try again!<br />
                 Have fun and learn to recognize emotions!
               </DialogDescription>
             </DialogHeader>
@@ -113,7 +174,7 @@ export default function EmotionRecognitionGame() {
       </div>
       <div id="emotion-game-area" className="mb-8">
         <div className="flex justify-center flex-wrap gap-4 mb-8">
-          {slots.map((emotion, index) => (
+          {emotions.map((emotion, index) => (
             <motion.div
               key={index}
               className={`w-32 h-32 rounded-lg border-4 border-white/50 shadow-lg ${emotion.bg} flex items-center justify-center text-xl font-bold text-white cursor-pointer`}
@@ -172,9 +233,8 @@ export default function EmotionRecognitionGame() {
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >
-        New Game
+        Restart Game
       </motion.button>
     </div>
   )
 }
-

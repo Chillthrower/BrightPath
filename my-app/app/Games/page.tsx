@@ -42,13 +42,13 @@ const games = [
     color: 'bg-red-300',
     icon: '🃏'
   },
-  {
-    id: 'word-formation',
-    title: 'Word Formation Challenge',
-    description: 'Create words from jumbled letters',
-    color: 'bg-indigo-300',
-    icon: '📚'
-  },
+  // {
+  //   id: 'word-formation',
+  //   title: 'Word Formation Challenge',
+  //   description: 'Create words from jumbled letters',
+  //   color: 'bg-indigo-300',
+  //   icon: '📚'
+  // },
   {
     id: 'grammar-detective',
     title: 'Grammar Detective',

@@ -21,7 +21,7 @@ const levels = [
       { text: "She don't like ice cream.", correct: false },
       { text: "They are going to the park.", correct: true },
     ],
-    time: 60
+    time: 30
   },
   { 
     name: 'Level 2', 
@@ -30,7 +30,7 @@ const levels = [
       { text: "The team is practicing for the big game.", correct: true },
       { text: "Every one of the apples are ripe.", correct: false },
     ],
-    time: 90
+    time: 30
   },
   { 
     name: 'Level 3', 
@@ -39,7 +39,7 @@ const levels = [
       { text: "The data show that the experiment was successful.", correct: true },
       { text: "She is one of the only people who understands the problem.", correct: false },
     ],
-    time: 120
+    time: 30
   },
 ]
 
@@ -47,6 +47,8 @@ export default function GrammarDetectiveGame() {
   const [currentLevel, setCurrentLevel] = useState(0)
   const [currentSentence, setCurrentSentence] = useState(0)
   const [score, setScore] = useState(0)
+  const [correctAnswers, setCorrectAnswers] = useState(0)
+  const [incorrectAnswers, setIncorrectAnswers] = useState(0)
   const [timeLeft, setTimeLeft] = useState(levels[currentLevel].time)
   const [gameOver, setGameOver] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
@@ -64,19 +66,27 @@ export default function GrammarDetectiveGame() {
     startNewLevel()
   }, [currentLevel])
 
+  useEffect(() => {
+    if (gameOver) {
+      saveGameDataToLocalStorage()
+    }
+  }, [gameOver])
+
   const startNewLevel = () => {
     setCurrentSentence(0)
-    setScore(0)
     setTimeLeft(levels[currentLevel].time)
     setGameOver(false)
     setFeedback(null)
   }
 
   const handleAnswer = (isCorrect: boolean) => {
+    // Update score and feedback based on correctness
     if (isCorrect === levels[currentLevel].sentences[currentSentence].correct) {
       setScore(score + 1)
+      setCorrectAnswers(correctAnswers + 1)
       setFeedback('Correct!')
     } else {
+      setIncorrectAnswers(incorrectAnswers + 1)
       setFeedback('Incorrect. Try again!')
     }
 
@@ -106,12 +116,32 @@ export default function GrammarDetectiveGame() {
     })
   }
 
+  const saveGameDataToLocalStorage = () => {
+    const gameData = {
+      totalScore: score,
+      totalCorrectAnswers: correctAnswers,
+      totalIncorrectAnswers: incorrectAnswers,
+      gameOver,
+      feedback: {
+        message: feedback,
+        isCorrect: feedback?.includes('Correct') || false
+      }
+    }
+
+    const storedData = JSON.parse(localStorage.getItem("grammarGameScores") || "{}");
+    const currentDate = new Date().toISOString().split("T")[0];  // YYYY-MM-DD format
+
+    storedData[currentDate] = gameData;
+
+    localStorage.setItem("grammarGameScores", JSON.stringify(storedData));
+  }
+
   return (
     <div className="text-center">
       <h2 className="text-3xl font-bold mb-4 text-blue-600">Grammar Detective Game</h2>
       <div className="flex justify-between items-center mb-4">
         <p className="text-xl">{levels[currentLevel].name}</p>
-        <p className="text-xl">Score: {score}/{levels[currentLevel].sentences.length}</p>
+        <p className="text-xl">Score: {score}/{levels.reduce((acc, level) => acc + level.sentences.length, 0)}</p>
         <p className="text-xl">Time: {timeLeft}s</p>
         <Dialog>
           <DialogTrigger asChild>
@@ -159,9 +189,9 @@ export default function GrammarDetectiveGame() {
       ) : (
         <div>
           <p className="text-xl mb-4">
-            Game Over! Your final score: {score}/{levels[currentLevel].sentences.length}
+            Game Over! Your final score: {score}/{levels.reduce((acc, level) => acc + level.sentences.length, 0)}
           </p>
-          {score === levels[currentLevel].sentences.length && currentLevel === levels.length - 1 ? (
+          {score === levels.reduce((acc, level) => acc + level.sentences.length, 0) ? (
             <motion.div
               className="text-2xl font-bold text-green-500"
               initial={{ opacity: 0, y: 20 }}
@@ -185,4 +215,3 @@ export default function GrammarDetectiveGame() {
     </div>
   )
 }
-

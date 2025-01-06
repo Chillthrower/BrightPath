@@ -30,24 +30,54 @@ export default function ShapeSortingGame() {
   const [items, setItems] = useState<ShapeItem[]>([])
   const [slots, setSlots] = useState<typeof shapes[]>([])
   const [score, setScore] = useState(0)
+  const [totalCorrectAnswers, setTotalCorrectAnswers] = useState(0)
+  const [totalIncorrectAnswers, setTotalIncorrectAnswers] = useState(0)
   const [gameOver, setGameOver] = useState(false)
   const [feedback, setFeedback] = useState<{ message: string, isCorrect: boolean } | null>(null)
   const [selectedItem, setSelectedItem] = useState<ShapeItem | null>(null)
 
   useEffect(() => {
+    loadGameState()
     startNewGame()
   }, [])
+
+  const loadGameState = () => {
+    const savedState = localStorage.getItem('ShapeSortingGame')
+    if (savedState) {
+      const parsedState = JSON.parse(savedState)
+      setScore(parsedState.totalScore || 0)
+      setTotalCorrectAnswers(parsedState.totalCorrectAnswers || 0)
+      setTotalIncorrectAnswers(parsedState.totalIncorrectAnswers || 0)
+      setGameOver(parsedState.gameOver || false)
+      setFeedback(null) // Reset feedback
+    }
+  }
+
+  const saveGameState = (newScore: number, newCorrectAnswers: number, newIncorrectAnswers: number) => {
+    const gameState = {
+      totalScore: newScore,
+      totalCorrectAnswers: newCorrectAnswers,
+      totalIncorrectAnswers: newIncorrectAnswers,
+      gameOver,
+    }
+    localStorage.setItem('ShapeSortingGame', JSON.stringify(gameState))
+  }
 
   const startNewGame = () => {
     const gameShapes = shapes.slice(0, 4)
     const newItems = gameShapes.map((shape, index) => ({ id: index, shape }))
+
+    // Randomize slots
     const newSlots = [...gameShapes].sort(() => Math.random() - 0.5)
     setItems(newItems)
     setSlots(newSlots)
     setScore(0)
+    setTotalCorrectAnswers(0)
+    setTotalIncorrectAnswers(0)
     setGameOver(false)
     setFeedback(null)
     setSelectedItem(null)
+    saveGameState(0, 0, 0) // Initial save
   }
 
   const handleItemClick = (item: ShapeItem) => {
@@ -55,22 +85,45 @@ export default function ShapeSortingGame() {
   }
 
   const handleSlotClick = (targetShape: typeof shapes[0]) => {
-    if (!selectedItem) return
+    if (!selectedItem) return;
+
+    let newCorrectAnswers = totalCorrectAnswers;
+    let newIncorrectAnswers = totalIncorrectAnswers;
 
     if (selectedItem.shape.name === targetShape.name) {
-      setItems(items.filter(i => i.id !== selectedItem.id))
-      setScore(score + 1)
-      setFeedback({ message: "Correct! Great job!", isCorrect: true })
-      if (items.length === 1) {
-        setGameOver(true)
-        triggerConfetti()
-      }
+        // Correct match
+        setItems(items.filter(i => i.id !== selectedItem.id)); // Remove matched shape
+        newCorrectAnswers = totalCorrectAnswers + 1; // Increment correct answers
+
+        // If all items are matched correctly, game is over
+        if (items.length === 1) {
+            setGameOver(true);
+            triggerConfetti();
+        }
+
+        setFeedback({ message: "Correct! Great job!", isCorrect: true });
+
     } else {
-      setFeedback({ message: "Oops! Try again!", isCorrect: false })
-      shakeAnimation()
+        // Incorrect match
+        newIncorrectAnswers = totalIncorrectAnswers + 1; // Increment incorrect answers
+        setFeedback({ message: "Oops! Try again!", isCorrect: false });
+        shakeAnimation();
     }
-    setSelectedItem(null)
-  }
+
+    // Calculate score as correct answers minus incorrect answers
+    const newScore = newCorrectAnswers - newIncorrectAnswers;
+
+    // Update state with new values
+    setScore(newScore);
+    setTotalCorrectAnswers(newCorrectAnswers); // Update total correct answers
+    setTotalIncorrectAnswers(newIncorrectAnswers); // Update total incorrect answers
+
+    // Update localStorage with new game state
+    saveGameState(newScore, newCorrectAnswers, newIncorrectAnswers);
+
+    // Reset selected item
+    setSelectedItem(null);
+  };
 
   const triggerConfetti = () => {
     confetti({
@@ -177,4 +230,3 @@ export default function ShapeSortingGame() {
     </div>
   )
 }
-

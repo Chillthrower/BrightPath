@@ -27,10 +27,28 @@ export default function ShapePatternGame() {
   const [pattern, setPattern] = useState<string[]>([])
   const [userPattern, setUserPattern] = useState<string[]>([])
   const [score, setScore] = useState(0)
+  const [totalCorrect, setTotalCorrect] = useState(0)
+  const [totalIncorrect, setTotalIncorrect] = useState(0)
   const [timeLeft, setTimeLeft] = useState(levels[currentLevel].time)
   const [gameOver, setGameOver] = useState(false)
   const [showPattern, setShowPattern] = useState(true)
   const [feedback, setFeedback] = useState<string | null>(null)
+
+  // Load the previous score and counts from localStorage on first render
+  useEffect(() => {
+    const storedGameData = JSON.parse(localStorage.getItem('gameData') || '{}')
+    if (storedGameData) {
+      setTotalCorrect(storedGameData.totalCorrect || 0)
+      setTotalIncorrect(storedGameData.totalIncorrect || 0)
+      setScore(storedGameData.score || 0)
+    }
+  }, [])
+
+  // Save the game data (totalCorrect, totalIncorrect, score) to localStorage
+  useEffect(() => {
+    const gameData = { totalCorrect, totalIncorrect, score }
+    localStorage.setItem('Patternmatchgame', JSON.stringify(gameData))
+  }, [totalCorrect, totalIncorrect, score])
 
   useEffect(() => {
     if (timeLeft > 0 && !gameOver) {
@@ -67,6 +85,7 @@ export default function ShapePatternGame() {
       setFeedback(isCorrect ? "Correct! Great job!" : "Oops! Try again!")
       if (isCorrect) {
         setScore(score + 1)
+        setTotalCorrect(totalCorrect + 1) // Update correct count
         if (score + 1 === 3) {
           if (currentLevel < levels.length - 1) {
             setCurrentLevel(currentLevel + 1)
@@ -79,6 +98,7 @@ export default function ShapePatternGame() {
           setTimeout(generatePattern, 1500)
         }
       } else {
+        setTotalIncorrect(totalIncorrect + 1) // Update incorrect count
         setTimeout(() => {
           setFeedback(null)
           generatePattern()
@@ -109,6 +129,8 @@ export default function ShapePatternGame() {
         <p className="text-xl">{levels[currentLevel].name}</p>
         <p className="text-xl">Score: {score}/3</p>
         <p className="text-xl">Time: {timeLeft}s</p>
+        <p className="text-xl">Total Correct: {totalCorrect}</p>
+        <p className="text-xl">Total Incorrect: {totalIncorrect}</p>
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline">How to Play</Button>
@@ -190,6 +212,8 @@ export default function ShapePatternGame() {
                 setScore(0)
                 setTimeLeft(levels[0].time)
                 setGameOver(false)
+                setTotalCorrect(0)
+                setTotalIncorrect(0)
                 generatePattern()
               }}
               className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
@@ -202,4 +226,3 @@ export default function ShapePatternGame() {
     </div>
   )
 }
-

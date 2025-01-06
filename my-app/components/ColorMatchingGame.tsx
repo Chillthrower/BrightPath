@@ -1,5 +1,3 @@
-'use client'
-
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import confetti from 'canvas-confetti'
@@ -31,14 +29,52 @@ interface Shape {
 export default function ColorMatchingGame() {
   const [shapes, setShapes] = useState<Shape[]>([])
   const [slots, setSlots] = useState<typeof colors[0][]>([])
-  const [score, setScore] = useState(0)
+  const [correctAnswers, setCorrectAnswers] = useState(0) // Track correct answers
+  const [incorrectAnswers, setIncorrectAnswers] = useState(0)  // Track incorrect answers
+  const [score, setScore] = useState(0) // The final score
   const [gameOver, setGameOver] = useState(false)
   const [feedback, setFeedback] = useState<{ message: string, isCorrect: boolean } | null>(null)
   const [selectedShape, setSelectedShape] = useState<Shape | null>(null)
+  const [storedScores, setStoredScores] = useState<{ [key: string]: { level: string, score: number, correctAnswers: number, incorrectAnswers: number, totalQuestions: number, timestamp: string }[] }>({})
 
   useEffect(() => {
     startNewGame()
+    loadScoresFromLocalStorage()
   }, [])
+
+  useEffect(() => {
+    // Only save score when the game is over
+    if (gameOver) {
+      saveScoreToLocalStorage()  // Save score after game over
+    }
+  }, [gameOver, correctAnswers, incorrectAnswers]) // Trigger when gameOver or score states change
+
+  const loadScoresFromLocalStorage = () => {
+    const scores = localStorage.getItem('colorMatchingGameScores')
+    if (scores) {
+      setStoredScores(JSON.parse(scores))
+    }
+  }
+
+  const saveScoreToLocalStorage = () => {
+    const today = new Date().toISOString().split('T')[0]
+    const newScore = {
+      level: "Level 1", // You can dynamically change levels if required
+      score: correctAnswers - incorrectAnswers, // Final score
+      correctAnswers, // The latest correct answers
+      incorrectAnswers, // The latest incorrect answers
+      totalQuestions: 5, // Set total questions accordingly
+      timestamp: new Date().toISOString()
+    }
+
+    // Check if today's data exists and replace it
+    const updatedScores = { ...storedScores }
+    updatedScores[today] = [newScore] // Replace the existing score data for today
+
+    // Update local storage with the new score data
+    localStorage.setItem('colorMatchingGameScores', JSON.stringify(updatedScores))
+    setStoredScores(updatedScores)
+  }
 
   const startNewGame = () => {
     const gameColors = colors.slice(0, 4)
@@ -46,7 +82,9 @@ export default function ColorMatchingGame() {
     const newSlots = [...gameColors].sort(() => Math.random() - 0.5)
     setShapes(newShapes)
     setSlots(newSlots)
-    setScore(0)
+    setCorrectAnswers(0)  // Reset correct answers count
+    setIncorrectAnswers(0)  // Reset incorrect answers count
+    setScore(0)  // Reset score
     setGameOver(false)
     setFeedback(null)
     setSelectedShape(null)
@@ -61,7 +99,7 @@ export default function ColorMatchingGame() {
 
     if (selectedShape.color.name === targetColor.name) {
       setShapes(shapes.filter(s => s.id !== selectedShape.id))
-      setScore(score + 1)
+      setCorrectAnswers(correctAnswers + 1) // Increment correct answers
       setFeedback({ message: "Correct! Great job!", isCorrect: true })
       if (shapes.length === 1) {
         setGameOver(true)
@@ -69,6 +107,7 @@ export default function ColorMatchingGame() {
       }
     } else {
       setFeedback({ message: "Oops! Try again!", isCorrect: false })
+      setIncorrectAnswers(incorrectAnswers + 1)  // Increment incorrect answers
       shakeAnimation()
     }
     setSelectedShape(null)
@@ -94,7 +133,7 @@ export default function ColorMatchingGame() {
     <div className="text-center">
       <h2 className="text-3xl font-bold mb-4 text-blue-600">Color Matching Game</h2>
       <div className="flex justify-between items-center mb-4">
-        <p className="text-xl">Score: {score}</p>
+        <p className="text-xl">Score: {correctAnswers - incorrectAnswers} | Correct: {correctAnswers} | Incorrect: {incorrectAnswers}</p>
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline">How to Play</Button>
@@ -175,4 +214,3 @@ export default function ColorMatchingGame() {
     </div>
   )
 }
-

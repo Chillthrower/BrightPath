@@ -8,7 +8,7 @@ import EmotionRecognitionGame from '@/components/EmotionRecognitionGame'
 import ShapeSortingGame from '@/components/ShapeSortingGame'
 import MusicalPatternsGame from '@/components/MusicalPatternsGame'
 import MemoryCardGame from '@/components/MemoryCardGame'
-import WordFormationGame from '@/components/WordFormationGame'
+// import WordFormationGame from '@/components/WordFormationGame'
 import GrammarDetectiveGame from '@/components/GrammarDetectiveGame'
 import BasicArithmeticGame from '@/components/BasicArithmeticGame'
 import ShapePatternGame from '@/components/ShapePatternGame'
@@ -28,8 +28,8 @@ export default function GamePage({ params }: { params: { id: string } }) {
         return <MusicalPatternsGame />
       case 'memory-card':
         return <MemoryCardGame />
-      case 'word-formation':
-        return <WordFormationGame />
+      // case 'word-formation':
+      //   return <WordFormationGame />
       case 'grammar-detective':
         return <GrammarDetectiveGame />
       case 'basic-arithmetic':
