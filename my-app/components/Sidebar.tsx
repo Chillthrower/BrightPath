@@ -4,13 +4,13 @@ import Link from 'next/link'
 import { ChevronRight, ChevronLeft, Home, Gamepad2, Book, BarChart2, Settings } from 'lucide-react'
 
 const navItems = [
-  { name: 'SignUp', icon: Home, href: '/UserAuth/signup' },
-  { name: 'Login', icon: Home, href: '/UserAuth/login' },
+  // { name: 'SignUp', icon: Home, href: '/UserAuth/signup' },
+  // { name: 'Login', icon: Home, href: '/UserAuth/login' },
   { name: 'Home', icon: Home, href: '/' },
   { name: 'Games', icon: Gamepad2, href: '/Games' },
   { name: 'Stories', icon: Book, href: '/story-creator' },
   { name: 'Learn', icon: Book, href: '/Learn_chatbot' },
-  { name: 'Progress', icon: BarChart2, href: '#' },
+  { name: 'Dashboard', icon: BarChart2, href: '/Dashboard' },
   
 ]
 
