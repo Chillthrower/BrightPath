@@ -11,7 +11,7 @@ from io import BytesIO
 app = Flask(__name__)
 CORS(app)
 
-genai.configure(api_key="AIzaSyC3opISLmYZ7d_4t6Ize4JnkoEOnACIX6E")
+genai.configure(api_key="")
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 @app.route("/StoryTeller", methods=["POST"])
@@ -118,6 +118,20 @@ def learnBot():
     except Exception as e:
         print("Error generating response:", e)
         return jsonify({"error": "Failed to generate response"}), 500
+
+@app.route("/AiSuggestionBot", methods=["GET"])
+def aiSuggestionBot():
+
+    text = """
+    Language Development: Language Development suggestion,
+    Physical Development: Physical Development suggestion,
+    Cognitive Skills: Cognitive Skills suggestion,
+    Communication Skills: Communication Skills suggestion,
+    """
+    
+    # Assuming model.generate_content is your AI model that generates suggestions
+    response = model.generate_content(f"Give a 4 brief suggestions for the parents on how to improve their childs Language Development, Physical Development, Cognitive Skills, communication skills in the form of: {text}")
+    return jsonify({"response": response.text})
 
 if __name__ == "__main__":
     app.run(debug=True)
