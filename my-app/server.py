@@ -129,7 +129,6 @@ def aiSuggestionBot():
     Communication Skills: Communication Skills suggestion,
     """
     
-    # Assuming model.generate_content is your AI model that generates suggestions
     response = model.generate_content(f"Give a 4 brief suggestions for the parents on how to improve their childs Language Development, Physical Development, Cognitive Skills, communication skills in the form of: {text}")
     return jsonify({"response": response.text})
 
