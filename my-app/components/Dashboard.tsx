@@ -10,6 +10,8 @@ import { CommunicationCard } from './CommunicationCard';
 import { AISuggestionsCard } from './AISuggestionsCard';
 import Background from './Background_copy';
 import Sidebar from './Sidebar';
+import axios from 'axios';
+import { useState, useEffect } from 'react';
 
 const analyticalData = [
   { name: 'Game 1', value: 80, color: '#4ADE80' },
@@ -80,9 +82,44 @@ const aiSuggestions = [
   { id: '1', suggestion: "Try interactive vocabulary games to boost language skills", category: "Language Development" },
   { id: '2', suggestion: "Incorporate more outdoor activities to improve motor skills", category: "Physical Development" },
   { id: '3', suggestion: "Practice basic coding exercises to enhance logical thinking", category: "Cognitive Skills" },
+  { id: '4', suggestion: "Improve communication", category: "Communication Skills" },
 ];
 
 export default function Dashboard() {
+
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+
+  useEffect(() => {
+    const fetchAiSuggestions = async () => {
+      try {
+        const response = await axios.get("http://localhost:5000/AiSuggestionBot");
+        
+        const rawSuggestions = response.data.response;
+
+        const suggestions = rawSuggestions
+          .split('\n\n') // Split suggestions by double newline
+          .map((suggestion, index) => {
+            const [categoryText, ...suggestionTextParts] = suggestion.split(':');
+            const suggestionText = suggestionTextParts.join(':').trim(); // Join if there were any extra colons in the suggestion part
+
+            return { 
+              id: String(index + 1), 
+              suggestion: suggestionText.replace(/\*\*/g, '').trim(),  // Remove ** from suggestion
+              category: categoryText.replace(/\*/g, '').trim() // Remove * from category
+            };
+          });
+        
+        console.log("Ai suggestions1: ", suggestions);
+        
+        setAiSuggestions(suggestions);
+      } catch (error) {
+        console.error("Error fetching AI suggestions:", error);
+      }
+    };
+
+    fetchAiSuggestions();
+  }, []);
+
   return (
     <div className="min-h-screen relative">
       <Background />
