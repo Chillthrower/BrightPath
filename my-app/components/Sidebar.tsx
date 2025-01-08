@@ -10,6 +10,7 @@ const navItems = [
   { name: 'Games', icon: Gamepad2, href: '/Games' },
   { name: 'Stories', icon: Book, href: '/story-creator' },
   { name: 'Learn', icon: Book, href: '/Learn_chatbot' },
+  { name: 'Communicate', icon: Book, href: '/Communication' },
   { name: 'Dashboard', icon: BarChart2, href: '/Dashboard' },
   
 ]
