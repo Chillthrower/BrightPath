@@ -6,22 +6,51 @@ import re
 from PIL import Image
 import base64
 from io import BytesIO
+import time
+import requests
+import io
+from huggingface_hub import InferenceClient
 
 
 app = Flask(__name__)
 CORS(app)
 
+client = InferenceClient("stabilityai/stable-diffusion-3.5-large-turbo", token="")
+
 genai.configure(api_key="")
 model = genai.GenerativeModel("gemini-1.5-flash")
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', '*')  # Allow all origins
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+    return response
 
 @app.route("/StoryTeller", methods=["POST"])
 def storyTeller():
     input_data = request.get_json()
     input_text = input_data.get("text", "")
     
-    response = model.generate_content(f"Tell a children's story based on the given context in paragraphs: {input_text}")
+    response = model.generate_content(f"Tell a children's story based on the given context in 4 paragraphs: {input_text}")
+
+    ImageGen(response.text)
     
     return jsonify({"response": response.text})
+
+
+def ImageGen(text):
+    ParaList = text.split("\n\n")
+    for i in range(len(ParaList) - 1):
+        PromptImage = model.generate_content(f"Generate a scenario based prompt to generate an image based on the following context: {ParaList[i]}")
+        print(PromptImage.text)
+        image = client.text_to_image(PromptImage.text)
+        image.save(f"public/Images/Image{i + 1}.png")
+    
+    client_1 = InferenceClient("stabilityai/stable-diffusion-3.5-large-turbo", token="")
+    PromptImage = model.generate_content(f"Generate a scenario based very short prompt to generate an image based on the following context: {ParaList[3]}")
+    image = client_1.text_to_image(PromptImage.text)
+    image.save(f"public/Images/Image4.png")
+    # print(ParaList[0])
 
 @app.route("/QuizBot", methods=["POST"])
 def quizBot():
