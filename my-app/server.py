@@ -11,7 +11,7 @@ from io import BytesIO
 app = Flask(__name__)
 CORS(app)
 
-genai.configure(api_key="AIzaSyDbK9fXz4j9mLLhQiYb2AGjelFoG5r9Fk0")
+genai.configure(api_key="")
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 @app.route("/StoryTeller", methods=["POST"])

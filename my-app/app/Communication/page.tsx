@@ -4,7 +4,9 @@ import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import VideoSection from '../../components/video-section'
 import ChatSection from '../../components/chat-section'
+import Sidebar from '../../components/Sidebar'
 import { Sun, Cloud, Star, TreesIcon as Tree } from 'lucide-react'
+
 
 export default function VideoChat() {
   const [isRecording, setIsRecording] = useState(false)
@@ -100,6 +102,7 @@ export default function VideoChat() {
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-sky-300 via-sky-200 to-green-200">
       {/* Decorative elements */}
+      <Sidebar />
       <div className="absolute inset-0 pointer-events-none">
         <motion.div
           className="absolute top-10 left-10 text-yellow-400"
