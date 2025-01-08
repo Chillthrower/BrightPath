@@ -76,7 +76,7 @@ export default function ShapeSortingGame() {
     const currentData = JSON.parse(localStorage.getItem('ShapeSortingGame') || '[]')
 
     const matchScore = correctAnswers - incorrectAnswers
-    const averageScore = correctAnswers + incorrectAnswers > 0 ? matchScore / (correctAnswers + incorrectAnswers) : 0
+    const averageScore = correctAnswers + incorrectAnswers > 0 ? matchScore / (correctAnswers) : 0
 
     const newMatch = {
       match: currentData.length > 0 ? currentData[currentData.length - 1].matches.length + 1 : 1,

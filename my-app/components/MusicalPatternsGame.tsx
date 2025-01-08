@@ -118,11 +118,11 @@ export default function MusicalPatternsGame() {
     // Create new match record
     const matchRecord: GameMatch = {
       match: gameData.match,
-      score: newGameData.score - newGameData.incorrect,
+      score: newGameData.score,
       correct: newGameData.correct,
       incorrect: newGameData.incorrect,
       totalQuestions: newGameData.totalQuestions,
-      averageScore: (newGameData.score - newGameData.incorrect) / newGameData.totalQuestions
+      averageScore: (newGameData.score) / newGameData.totalQuestions
     }
 
     // Update or add match to today's records

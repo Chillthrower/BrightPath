@@ -53,11 +53,14 @@ export default function GrammarDetectiveGame() {
   const [gameOver, setGameOver] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
 
+
+
   useEffect(() => {
     if (timeLeft > 0 && !gameOver) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000)
       return () => clearTimeout(timer)
     } else if (timeLeft === 0 && !gameOver) {
+      saveGameDataToLocalStorage()
       endGame()
     }
   }, [timeLeft, gameOver])
@@ -116,28 +119,48 @@ export default function GrammarDetectiveGame() {
     })
   }
 
+  const getTodayKey = () => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const saveGameDataToLocalStorage = () => {
-    const gameData = {
-      totalScore: score,
-      totalCorrectAnswers: correctAnswers,
-      totalIncorrectAnswers: incorrectAnswers,
-      gameOver,
-      feedback: {
-        message: feedback,
-        isCorrect: feedback?.includes('Correct') || false
-      }
+    const todayKey = getTodayKey()
+    const currentData = JSON.parse(localStorage.getItem('grammarDetectiveGame') || '[]')
+
+    const matchScore = correctAnswers - incorrectAnswers
+    const averageScore = correctAnswers + incorrectAnswers > 0 ? matchScore / (correctAnswers) : 0
+
+    const newMatch = {
+      match: currentData.length > 0 ? currentData[currentData.length - 1].matches.length + 1 : 1,
+      score: matchScore,
+      correct: correctAnswers,
+      incorrect: incorrectAnswers,
+      totalQuestions: 5,
+      averageScore: averageScore.toFixed(2),
     }
 
-    const storedData = JSON.parse(localStorage.getItem("grammarGameScores") || "{}");
-    const ttoday = new Date();
-      const year = ttoday.getFullYear();
-      const month = String(ttoday.getMonth() + 1).padStart(2, '0'); // Months are 0-based
-      const day = String(ttoday.getDate()).padStart(2, '0');
-      const currentDate = `${year}-${month}-${day}`;
+    if (currentData.length === 0 || currentData[currentData.length - 1].date !== todayKey) {
+      currentData.push({
+        date: todayKey,
+        TotalMatches: 1,
+        TotalAverageScore: newMatch.averageScore,
+        matches: [newMatch]
+      })
+    } else {
+      currentData[currentData.length - 1].matches.push(newMatch)
+      currentData[currentData.length - 1].TotalMatches = currentData[currentData.length - 1].matches.length
+      const totalAverageScore = (
+        currentData[currentData.length - 1].matches.reduce((sum, match) => sum + parseFloat(match.averageScore), 0) /
+        currentData[currentData.length - 1].matches.length
+      ).toFixed(2)
+      currentData[currentData.length - 1].TotalAverageScore = totalAverageScore
+    }
 
-    storedData[currentDate] = gameData;
-
-    localStorage.setItem("grammarGameScores", JSON.stringify(storedData));
+    localStorage.setItem('grammarDetectiveGame', JSON.stringify(currentData))
   }
 
   return (

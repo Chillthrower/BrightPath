@@ -16,7 +16,100 @@ import { useState, useEffect } from 'react';
 export default function Dashboard() {
   const [aiSuggestions, setAiSuggestions] = useState([]);
   const [allGameTotalAverageScore, setAllGameTotalAverageScore] = useState(0);
+  const [dayStreak, setDayStreak] = useState(0);
+  const [analyticalData, setAnalyticalData] = useState([
+    { name: 'Game 1', value: 0, color: '#4ADE80' },
+    { name: 'Game 2', value: 0, color: '#FCD34D' },
+    { name: 'Game 3', value: 0, color: '#4ADE80' },
+    { name: 'Quiz', value: 0, color: '#FCD34D' },
+  ]);
+  const [consistencyData, setConsistencyData] = useState([
+    { day: "Mon", value: 0 },
+    { day: "Tue", value: 0 },
+    { day: "Wed", value: 0 },
+    { day: "Thu", value: 0 },
+    { day: "Fri", value: 0 },
+    { day: "Sat", value: 0 },
+    { day: "Sun", value: 0 },
+  ]);
+  useEffect(() => {
+    const calculateDayStreak = () => {
+      const today = new Date().toISOString().split('T')[0]; // Current date in YYYY-MM-DD format
+      let streak = 0;
 
+      const isDateInStorage = (date) => {
+        return Object.keys(localStorage).some((key) => {
+          const storedData = JSON.parse(localStorage.getItem(key) || '[]');
+          return Array.isArray(storedData) && storedData.some((entry) => entry.date === date);
+        });
+      };
+
+      if (isDateInStorage(today)) {
+        streak = 1;
+        let previousDate = new Date(today);
+
+        while (true) {
+          previousDate.setDate(previousDate.getDate() - 1); // Go to the previous day
+          const prevDateStr = previousDate.toISOString().split('T')[0];
+
+          if (isDateInStorage(prevDateStr)) {
+            streak += 1;
+          } else {
+            break;
+          }
+        }
+      }
+
+      setDayStreak(streak);
+    };
+
+    calculateDayStreak();
+  }, []);
+  useEffect(() => {
+    const getCurrentWeekDates = () => {
+      const today = new Date();
+      const dayOfWeek = today.getDay(); // Sunday - Saturday: 0 - 6
+      const startOfWeek = new Date(today);
+      startOfWeek.setDate(today.getDate() - dayOfWeek + 1); // Set to Monday
+  
+      const dates = [];
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(startOfWeek);
+        date.setDate(startOfWeek.getDate() + i);
+        dates.push({
+          day: date.toLocaleDateString("en-US", { weekday: "short" }), // Convert to day name
+          date: date.toISOString().split("T")[0], // Convert to YYYY-MM-DD
+        });
+      }
+  
+      return dates;
+    };
+  
+    const weekDates = getCurrentWeekDates();
+    const updatedConsistencyData = consistencyData.map((dayEntry) => {
+      const matchingDate = weekDates.find((entry) => entry.day === dayEntry.day);
+      if (!matchingDate) return dayEntry;
+  
+      let totalAverageScore = 0;
+  
+      Object.keys(localStorage).forEach((key) => {
+        const storedData = JSON.parse(localStorage.getItem(key) || "[]");
+        if (Array.isArray(storedData)) {
+          storedData.forEach((entry) => {
+            if (entry.date === matchingDate.date) {
+              totalAverageScore += parseFloat((entry.TotalAverageScore) || 0);
+            }
+          });
+        }
+      });
+  
+      return { ...dayEntry, value: totalAverageScore };
+    });
+  
+    setConsistencyData(updatedConsistencyData);
+  }, [consistencyData]);
+  
+  
   useEffect(() => {
     // Fetch AI suggestions
     const fetchAiSuggestions = async () => {
@@ -24,13 +117,13 @@ export default function Dashboard() {
         const response = await axios.get("http://localhost:5000/AiSuggestionBot");
         
         const rawSuggestions = response.data.response;
-
+  
         const suggestions = rawSuggestions
           .split('\n\n') // Split suggestions by double newline
           .map((suggestion, index) => {
             const [categoryText, ...suggestionTextParts] = suggestion.split(':');
             const suggestionText = suggestionTextParts.join(':').trim(); // Join if there were any extra colons in the suggestion part
-
+  
             return { 
               id: String(index + 1), 
               suggestion: suggestionText.replace(/\*\*/g, '').trim(),  // Remove ** from suggestion
@@ -38,44 +131,61 @@ export default function Dashboard() {
             };
           });
         
-        console.log("Ai suggestions1: ", suggestions);
+        console.log("AI suggestions: ", suggestions);
         
         setAiSuggestions(suggestions);
       } catch (error) {
         console.error("Error fetching AI suggestions:", error);
       }
     };
-
+  
     fetchAiSuggestions();
-
+  
     // Keys representing different game categories
     const gameScoreKeys = [
-      'musicalGameScore',
-      'emotionGameScores',
-      'colorMatchingGameScores',
-      'ShapeSortingGame'
+      { key: 'musicalGameScore', name: 'Musical Game' },
+      { key: 'emotionGameScores', name: 'Emotion Game' },
+      { key: 'colorMatchingGameScores', name: 'Color Game' },
+      { key: 'ShapeSortingGame', name: 'Shape Sort' },
+      {key : 'grammarDetectiveGame' , name:'Grammar'},
+      {key : 'basicArithmeticGame' , name:'Math'}
     ];
-
+  
     let totalAverageScore = 0;
     let totalEntries = 0;
-
-    // Loop through each game category and add up TotalAverageScore
-    gameScoreKeys.forEach((key) => {
+    const updatedAnalyticalData = [];
+  
+    // Loop through each game category to compute individual averages
+    gameScoreKeys.forEach(({ key, name }, index) => {
       const storedData = JSON.parse(localStorage.getItem(key) || '[]'); // Fetch the stored data for each key
-
+  
+      let categoryTotal = 0;
+      let categoryCount = 0;
+  
       if (storedData && Array.isArray(storedData)) {
-        storedData.forEach((entry: any) => {
-          totalAverageScore += parseFloat(entry.TotalAverageScore);
-          totalEntries += 1;
+        storedData.forEach((entry) => {
+          categoryTotal += parseFloat(entry.TotalAverageScore);
+          categoryCount += 1;
         });
       }
+  
+      const categoryAverage = categoryCount > 0 ? (categoryTotal / categoryCount).toFixed(2) : 0;
+  
+      updatedAnalyticalData.push({
+        name,
+        value: parseFloat(categoryAverage) * 100,
+        color: index % 2 === 0 ? '#4ADE80' : '#FCD34D',
+      });
+  
+      totalAverageScore += categoryTotal;
+      totalEntries += categoryCount;
     });
-
-    // Calculate the final average
-    const calculatedAverage = totalEntries > 0 ? totalAverageScore / totalEntries : 0;
-    console.log("Total Average Score:", totalAverageScore); // Print the sum of TotalAverageScores
-    console.log("Total Entries:", totalEntries); // Print the number of entries
-
+  
+    // Update the analytical data state
+    setAnalyticalData(updatedAnalyticalData);
+  
+    // Calculate the overall average score
+    const calculatedAverage = totalEntries > 0 ? (totalAverageScore / totalEntries).toFixed(4) : 0;
     setAllGameTotalAverageScore(calculatedAverage * 100);
   }, []);
 
@@ -86,22 +196,13 @@ export default function Dashboard() {
     { month: 'Apr', value: 80 },
   ];
   
-  const timeSpentData = [
+  const daysStreak = [
     { name: 'Games', value: 40, color: '#FF4B91' },
     { name: 'Learning', value: 35, color: '#65B741' },
     { name: 'Communication', value: 25, color: '#4477CE' },
   ];
   
-  const consistencyData = [
-    { day: 'Mon', value: 3 },
-    { day: 'Tue', value: 2 },
-    { day: 'Wed', value: 3 },
-    { day: 'Thu', value: 1 },
-    { day: 'Fri', value: 2 },
-    { day: 'Sat', value: 4 },
-    { day: 'Sun', value: 3 },
-  ];
-  
+
   const milestones = [
     {
       id: '1',
@@ -137,12 +238,7 @@ export default function Dashboard() {
     { name: 'Comprehension', value: 90, icon: BookOpen },
   ];
   
-  const analyticalData = [
-    { name: 'Game 1', value: 80, color: '#4ADE80' },
-    { name: 'Game 2', value: 65, color: '#FCD34D' },
-    { name: 'Game 3', value: 90, color: '#4ADE80' },
-    { name: 'Quiz', value: 75, color: '#FCD34D' },
-  ];
+
 
   return (
     <div className="min-h-screen relative">
@@ -192,12 +288,13 @@ export default function Dashboard() {
               unit="%"
             />
             <MetricCard
-              title="Time Spent"
-              value={10.5}
+              title="Streak"
+              value={dayStreak}
               icon={Clock}
               color="#FFB534"
-              subtitle="Hours this week"
+              subtitle={`${dayStreak} days of streak`} // Correct template literal syntax
             />
+
           </motion.div>
 
           {/* Charts Row 1 */}
@@ -261,7 +358,7 @@ export default function Dashboard() {
           >
             <ProgressChart
               title="Time Distribution"
-              data={timeSpentData}
+              data={daysStreak}
               color="#4477CE"
               type="pie"
               dataKey="value"
