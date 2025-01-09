@@ -295,4 +295,3 @@ export default function ChatSection({ messages, currentSpeech, isProcessing, isR
     </div>
   )
 }
-

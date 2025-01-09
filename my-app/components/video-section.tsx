@@ -85,4 +85,3 @@ export default function VideoSection({ isRecording, onStart, onStop }: VideoSect
     </div>
   )
 }
-

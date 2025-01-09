@@ -7,7 +7,6 @@ import ChatSection from '../../components/chat-section'
 import Sidebar from '../../components/Sidebar'
 import { Sun, Cloud, Star, TreesIcon as Tree } from 'lucide-react'
 
-
 export default function VideoChat() {
   const [isRecording, setIsRecording] = useState(false)
   const [messages, setMessages] = useState([])
@@ -18,7 +17,7 @@ export default function VideoChat() {
   const chunksRef = useRef([])
   const lastMessageRef = useRef('')
 
-  // Speech recognition setup
+  // Initialize speech recognition
   useEffect(() => {
     if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
       recognitionRef.current = new (window.SpeechRecognition || window.webkitSpeechRecognition)()
@@ -38,35 +37,39 @@ export default function VideoChat() {
         }
       }
     }
-  }, [])
+  }, [isRecording]) // Ensures re-initialization on dependency changes
 
   const startRecording = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      const mediaRecorder = new MediaRecorder(stream)
-      chunksRef.current = []
+      if (recognitionRef.current) {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        const mediaRecorder = new MediaRecorder(stream)
+        chunksRef.current = []
 
-      mediaRecorder.ondataavailable = (e) => {
-        chunksRef.current.push(e.data)
-      }
-//video saving section
-      mediaRecorder.onstop = async () => {
-        const blob = new Blob(chunksRef.current, { type: 'video/webm' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `video-${Date.now()}.webm`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      }
+        mediaRecorder.ondataavailable = (e) => {
+          chunksRef.current.push(e.data)
+        }
 
-      mediaRecorderRef.current = mediaRecorder
-      mediaRecorder.start()
-      recognitionRef.current.start()
-      setIsRecording(true)
-      setCurrentSpeech('')
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(chunksRef.current, { type: 'video/webm' })
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `video-${Date.now()}.webm`
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+          URL.revokeObjectURL(url)
+        }
+
+        mediaRecorderRef.current = mediaRecorder
+        mediaRecorder.start()
+        recognitionRef.current.start()
+        setIsRecording(true)
+        setCurrentSpeech('')
+      } else {
+        console.error('SpeechRecognition API is not available.')
+      }
     } catch (err) {
       console.error('Error accessing media devices:', err)
     }
@@ -78,14 +81,14 @@ export default function VideoChat() {
       mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop())
       recognitionRef.current.stop()
       setIsRecording(false)
-    
+
       if (currentSpeech && currentSpeech !== lastMessageRef.current) {
         lastMessageRef.current = currentSpeech
         setMessages(prev => [...prev, {
           type: 'user',
           content: currentSpeech
         }])
-        
+
         setIsProcessing(true)
         setTimeout(() => {
           setMessages(prev => [...prev, {
@@ -117,7 +120,7 @@ export default function VideoChat() {
         >
           <Sun size={60} />
         </motion.div>
-        
+
         {[...Array(5)].map((_, i) => (
           <motion.div
             key={i}
@@ -136,7 +139,7 @@ export default function VideoChat() {
             <Star className="text-yellow-300" size={24} />
           </motion.div>
         ))}
-        
+
         {/* Clouds */}
         {[...Array(3)].map((_, i) => (
           <motion.div
@@ -217,4 +220,3 @@ export default function VideoChat() {
     </div>
   )
 }
-
