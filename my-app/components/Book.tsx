@@ -14,8 +14,13 @@ export default function Book({ storyData }: { storyData: string }) {
 
   const pages = storyData.response.split('\n\n').map((paragraph, index) => ({
     content: paragraph.trim(),
+<<<<<<< HEAD
     image: "/placeholder.svg" // You can change this to a dynamic image URL if needed
   }));
+=======
+    image: `/Images/Image${index}.png?timestamp=${new Date().getTime()}`, // Force cache refresh
+  })); 
+>>>>>>> b9a4ef3 (Changes)
 
   const turnPage = (direction: 'left' | 'right') => {
     if (isFlipping) return
@@ -190,4 +195,8 @@ export default function Book({ storyData }: { storyData: string }) {
       </div>
     </>
   )
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> b9a4ef3 (Changes)

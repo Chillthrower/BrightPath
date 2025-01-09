@@ -11,9 +11,17 @@ charset-normalizer==3.4.1
 click==8.1.8
 colorama==0.4.6
 dataclasses-json==0.6.7
+<<<<<<< HEAD
 Flask==3.1.0
 Flask-Cors==5.0.0
 frozenlist==1.5.0
+=======
+filelock==3.16.1
+Flask==3.1.0
+Flask-Cors==5.0.0
+frozenlist==1.5.0
+fsspec==2024.12.0
+>>>>>>> b9a4ef3 (Changes)
 google-ai-generativelanguage==0.6.10
 google-api-core==2.24.0
 google-api-python-client==2.156.0
@@ -29,6 +37,10 @@ httpcore==1.0.7
 httplib2==0.22.0
 httpx==0.28.1
 httpx-sse==0.4.0
+<<<<<<< HEAD
+=======
+huggingface-hub==0.27.1
+>>>>>>> b9a4ef3 (Changes)
 idna==3.10
 itsdangerous==2.2.0
 Jinja2==3.1.5
@@ -70,4 +82,8 @@ typing_extensions==4.12.2
 uritemplate==4.1.1
 urllib3==2.3.0
 Werkzeug==3.1.3
+<<<<<<< HEAD
 yarl==1.18.3
+=======
+yarl==1.18.3
+>>>>>>> b9a4ef3 (Changes)
