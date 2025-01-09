@@ -29,38 +29,82 @@ interface ShapeItem {
 export default function ShapeSortingGame() {
   const [items, setItems] = useState<ShapeItem[]>([])
   const [slots, setSlots] = useState<typeof shapes[]>([])
+  const [correctAnswers, setCorrectAnswers] = useState(0)
+  const [incorrectAnswers, setIncorrectAnswers] = useState(0)
   const [score, setScore] = useState(0)
-  const [totalCorrectAnswers, setTotalCorrectAnswers] = useState(0)
-  const [totalIncorrectAnswers, setTotalIncorrectAnswers] = useState(0)
   const [gameOver, setGameOver] = useState(false)
   const [feedback, setFeedback] = useState<{ message: string, isCorrect: boolean } | null>(null)
   const [selectedItem, setSelectedItem] = useState<ShapeItem | null>(null)
 
   useEffect(() => {
-    loadGameState()
     startNewGame()
   }, [])
+
+  useEffect(() => {
+    if (gameOver) {
+      saveMatchData()
+    }
+  }, [gameOver])
 
   const loadGameState = () => {
     const savedState = localStorage.getItem('ShapeSortingGame')
     if (savedState) {
       const parsedState = JSON.parse(savedState)
-      setScore(parsedState.totalScore || 0)
-      setTotalCorrectAnswers(parsedState.totalCorrectAnswers || 0)
-      setTotalIncorrectAnswers(parsedState.totalIncorrectAnswers || 0)
-      setGameOver(parsedState.gameOver || false)
-      setFeedback(null) // Reset feedback
+      const todaysDate = new Date().toISOString().split('T')[0]
+      const todayGameState = parsedState.find((game: any) => game.date === todaysDate)
+
+      if (todayGameState) {
+        setScore(todayGameState.totalScore || 0)
+        setCorrectAnswers(todayGameState.totalCorrectAnswers || 0)
+        setIncorrectAnswers(todayGameState.totalIncorrectAnswers || 0)
+        setGameOver(todayGameState.gameOver || false)
+        setFeedback(null) // Reset feedback
+      }
     }
   }
 
-  const saveGameState = (newScore: number, newCorrectAnswers: number, newIncorrectAnswers: number) => {
-    const gameState = {
-      totalScore: newScore,
-      totalCorrectAnswers: newCorrectAnswers,
-      totalIncorrectAnswers: newIncorrectAnswers,
-      gameOver,
+  const getTodayKey = () => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const saveMatchData = () => {
+    const todayKey = getTodayKey()
+    const currentData = JSON.parse(localStorage.getItem('ShapeSortingGame') || '[]')
+
+    const matchScore = correctAnswers - incorrectAnswers
+    const averageScore = correctAnswers + incorrectAnswers > 0 ? matchScore / (correctAnswers) : 0
+
+    const newMatch = {
+      match: currentData.length > 0 ? currentData[currentData.length - 1].matches.length + 1 : 1,
+      score: matchScore,
+      correct: correctAnswers,
+      incorrect: incorrectAnswers,
+      totalQuestions: 5,
+      averageScore: averageScore.toFixed(2),
     }
-    localStorage.setItem('ShapeSortingGame', JSON.stringify(gameState))
+
+    if (currentData.length === 0 || currentData[currentData.length - 1].date !== todayKey) {
+      currentData.push({
+        date: todayKey,
+        TotalMatches: 1,
+        TotalAverageScore: newMatch.averageScore,
+        matches: [newMatch]
+      })
+    } else {
+      currentData[currentData.length - 1].matches.push(newMatch)
+      currentData[currentData.length - 1].TotalMatches = currentData[currentData.length - 1].matches.length
+      const totalAverageScore = (
+        currentData[currentData.length - 1].matches.reduce((sum, match) => sum + parseFloat(match.averageScore), 0) /
+        currentData[currentData.length - 1].matches.length
+      ).toFixed(2)
+      currentData[currentData.length - 1].TotalAverageScore = totalAverageScore
+    }
+
+    localStorage.setItem('ShapeSortingGame', JSON.stringify(currentData))
   }
 
   const startNewGame = () => {
@@ -72,12 +116,12 @@ export default function ShapeSortingGame() {
     setItems(newItems)
     setSlots(newSlots)
     setScore(0)
-    setTotalCorrectAnswers(0)
-    setTotalIncorrectAnswers(0)
+    setCorrectAnswers(0)
+    setIncorrectAnswers(0)
     setGameOver(false)
     setFeedback(null)
     setSelectedItem(null)
-    saveGameState(0, 0, 0) // Initial save
+
   }
 
   const handleItemClick = (item: ShapeItem) => {
@@ -87,13 +131,13 @@ export default function ShapeSortingGame() {
   const handleSlotClick = (targetShape: typeof shapes[0]) => {
     if (!selectedItem) return;
 
-    let newCorrectAnswers = totalCorrectAnswers;
-    let newIncorrectAnswers = totalIncorrectAnswers;
+    let newCorrectAnswers = correctAnswers;
+    let newIncorrectAnswers = incorrectAnswers;
 
     if (selectedItem.shape.name === targetShape.name) {
         // Correct match
         setItems(items.filter(i => i.id !== selectedItem.id)); // Remove matched shape
-        newCorrectAnswers = totalCorrectAnswers + 1; // Increment correct answers
+        newCorrectAnswers = correctAnswers + 1; // Increment correct answers
 
         // If all items are matched correctly, game is over
         if (items.length === 1) {
@@ -105,7 +149,7 @@ export default function ShapeSortingGame() {
 
     } else {
         // Incorrect match
-        newIncorrectAnswers = totalIncorrectAnswers + 1; // Increment incorrect answers
+        newIncorrectAnswers = incorrectAnswers + 1; // Increment incorrect answers
         setFeedback({ message: "Oops! Try again!", isCorrect: false });
         shakeAnimation();
     }
@@ -115,8 +159,8 @@ export default function ShapeSortingGame() {
 
     // Update state with new values
     setScore(newScore);
-    setTotalCorrectAnswers(newCorrectAnswers); // Update total correct answers
-    setTotalIncorrectAnswers(newIncorrectAnswers); // Update total incorrect answers
+    setCorrectAnswers(newCorrectAnswers); // Update total correct answers
+    setIncorrectAnswers(newIncorrectAnswers); // Update total incorrect answers
 
     // Update localStorage with new game state
     saveGameState(newScore, newCorrectAnswers, newIncorrectAnswers);

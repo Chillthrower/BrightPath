@@ -36,6 +36,7 @@ export default function BasicArithmeticGame() {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000)
       return () => clearTimeout(timer)
     } else if (timeLeft === 0 && !gameOver) {
+      storeGameData()
       endGame()
     }
   }, [timeLeft, gameOver])
@@ -103,27 +104,48 @@ export default function BasicArithmeticGame() {
     })
   }
 
+  const getTodayKey = () => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
   const storeGameData = () => {
-    const today = new Date().toISOString().split('T')[0]; // Get current date in YYYY-MM-DD format
-    const gameData = {
-      level: levels[currentLevel].name,
-      score,
-      correctAnswers,
-      incorrectAnswers,
-      totalQuestions: levels[currentLevel].questions,
-      timestamp: new Date().toISOString(),
-    };
+    const todayKey = getTodayKey()
+    const currentData = JSON.parse(localStorage.getItem('basicArithmeticGame') || '[]')
 
-    // Get existing data from localStorage
-    const storedData = JSON.parse(localStorage.getItem('arithmeticGameScores') || '{}');
+    const matchScore = correctAnswers - incorrectAnswers
+    const averageScore = correctAnswers + incorrectAnswers > 0 ? matchScore / (correctAnswers) : 0
 
-    // If data for today exists, update it; otherwise, create new
-    const updatedData = {
-      ...storedData,
-      [today]: [{ ...gameData, updatedAt: new Date().toISOString() }],
-    };
+    const newMatch = {
+      match: currentData.length > 0 ? currentData[currentData.length - 1].matches.length + 1 : 1,
+      score: matchScore,
+      correct: correctAnswers,
+      incorrect: incorrectAnswers,
+      totalQuestions: 5,
+      averageScore: averageScore.toFixed(2),
+    }
 
-    localStorage.setItem('arithmeticGameScores', JSON.stringify(updatedData));
+    if (currentData.length === 0 || currentData[currentData.length - 1].date !== todayKey) {
+      currentData.push({
+        date: todayKey,
+        TotalMatches: 1,
+        TotalAverageScore: newMatch.averageScore,
+        matches: [newMatch]
+      })
+    } else {
+      currentData[currentData.length - 1].matches.push(newMatch)
+      currentData[currentData.length - 1].TotalMatches = currentData[currentData.length - 1].matches.length
+      const totalAverageScore = (
+        currentData[currentData.length - 1].matches.reduce((sum, match) => sum + parseFloat(match.averageScore), 0) /
+        currentData[currentData.length - 1].matches.length
+      ).toFixed(2)
+      currentData[currentData.length - 1].TotalAverageScore = totalAverageScore
+    }
+
+    localStorage.setItem('basicArithmeticGame', JSON.stringify(currentData))
   }
 
   return (

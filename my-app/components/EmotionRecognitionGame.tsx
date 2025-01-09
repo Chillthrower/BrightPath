@@ -30,35 +30,24 @@ export default function EmotionRecognitionGame() {
   const [items, setItems] = useState<EmotionItem[]>([])
   const [correctAnswers, setCorrectAnswers] = useState(0)
   const [incorrectAnswers, setIncorrectAnswers] = useState(0)
-  const [score, setScore] = useState(0) // The final score
+  const [score, setScore] = useState(0)
   const [gameOver, setGameOver] = useState(false)
   const [feedback, setFeedback] = useState<{ message: string, isCorrect: boolean } | null>(null)
   const [selectedItem, setSelectedItem] = useState<EmotionItem | null>(null)
+  const [match, setMatch] = useState(0)
 
-  // Load saved game state from localStorage
   useEffect(() => {
-    const savedState = localStorage.getItem('emotionGameScores')
-    const today = new Date().toISOString().split('T')[0] // Get today's date (yyyy-mm-dd)
-
-    if (savedState) {
-      const parsedState = JSON.parse(savedState)
-      const todayState = parsedState[today]
-      if (todayState) {
-        console.log('Loaded saved game state for today:', todayState) // Debugging line
-        setCorrectAnswers(todayState.correctAnswers || 0)
-        setIncorrectAnswers(todayState.incorrectAnswers || 0)
-        setScore(todayState.score || 0)
-        setGameOver(todayState.gameOver || false)
-        setFeedback(todayState.feedback || null)
-      } else {
-        startNewGame() // Start a new game if no state for today
-      }
-    } else {
-      startNewGame() // Start a new game if no saved state exists
-    }
+    startNewGame()
   }, [])
 
-  // Start a new game
+  useEffect(() => {
+    if (gameOver) {
+      saveMatchData()
+    }
+  }, [gameOver])
+
+
+
   const startNewGame = () => {
     const gameEmotions = emotions.slice(0, 4)
     const newItems = gameEmotions.map((emotion, index) => ({ id: index, emotion }))
@@ -69,16 +58,12 @@ export default function EmotionRecognitionGame() {
     setGameOver(false)
     setFeedback(null)
     setSelectedItem(null)
-    saveGameState(0, 0, 0, false, null) // Save with zero scores initially
-    console.log('New game started and state saved') // Debugging line
   }
 
-  // Handle selecting an emotion item
   const handleItemClick = (item: EmotionItem) => {
     setSelectedItem(item)
   }
 
-  // Handle selecting a slot and checking for correct match
   const handleSlotClick = (targetEmotion: typeof emotions[0]) => {
     if (!selectedItem) return
 
@@ -89,6 +74,7 @@ export default function EmotionRecognitionGame() {
       setFeedback({ message: "Correct! Great job!", isCorrect: true })
       if (items.length === 1) {
         setGameOver(true)
+        
         triggerConfetti()
       }
     } else {
@@ -100,7 +86,50 @@ export default function EmotionRecognitionGame() {
     setSelectedItem(null)
   }
 
-  // Trigger confetti on game completion
+  const getTodayKey = () => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
+
+  const saveMatchData = () => {
+    const todayKey = getTodayKey()
+    const currentData = JSON.parse(localStorage.getItem('emotionGameScores') || '[]')
+
+    const matchScore = correctAnswers - incorrectAnswers
+    const averageScore = correctAnswers + incorrectAnswers > 0 ? matchScore / (correctAnswers) : 0
+
+    const newMatch = {
+      match: currentData.length > 0 ? currentData[currentData.length - 1].matches.length + 1 : 1,
+      score: matchScore,
+      correct: correctAnswers,
+      incorrect: incorrectAnswers,
+      totalQuestions: 5,
+      averageScore: averageScore.toFixed(2),
+    }
+
+    if (currentData.length === 0 || currentData[currentData.length - 1].date !== todayKey) {
+      currentData.push({
+        date: todayKey,
+        TotalMatches: 1,
+        TotalAverageScore: newMatch.averageScore,
+        matches: [newMatch]
+      })
+    } else {
+      currentData[currentData.length - 1].matches.push(newMatch)
+      currentData[currentData.length - 1].TotalMatches = currentData[currentData.length - 1].matches.length
+      const totalAverageScore = (
+        currentData[currentData.length - 1].matches.reduce((sum, match) => sum + parseFloat(match.averageScore), 0) /
+        currentData[currentData.length - 1].matches.length
+      ).toFixed(2)
+      currentData[currentData.length - 1].TotalAverageScore = totalAverageScore
+    }
+
+    localStorage.setItem('emotionGameScores', JSON.stringify(currentData))
+  }
+
   const triggerConfetti = () => {
     confetti({
       particleCount: 100,
@@ -109,7 +138,6 @@ export default function EmotionRecognitionGame() {
     })
   }
 
-  // Shake animation when an incorrect match is made
   const shakeAnimation = () => {
     const gameArea = document.getElementById('emotion-game-area')
     if (gameArea) {
@@ -117,38 +145,6 @@ export default function EmotionRecognitionGame() {
       setTimeout(() => gameArea.classList.remove('shake'), 500)
     }
   }
-
-  // Save the current game state to localStorage (including correct/incorrect answers, game over state, feedback)
-  const saveGameState = (correctAnswers: number, incorrectAnswers: number, score: number, gameOver: boolean, feedback: { message: string, isCorrect: boolean } | null) => {
-    const today = new Date().toISOString().split('T')[0] // Get today's date (yyyy-mm-dd)
-
-    const gameState = {
-      correctAnswers,
-      incorrectAnswers,
-      score,
-      gameOver,
-      feedback,
-    }
-
-    // Load current saved game scores from localStorage
-    const savedScores = localStorage.getItem('emotionGameScores')
-    const gameScores = savedScores ? JSON.parse(savedScores) : {}
-
-    // Save today's game state
-    gameScores[today] = gameState
-
-    // Save to localStorage
-    localStorage.setItem('emotionGameScores', JSON.stringify(gameScores))
-    console.log('Game state saved for today:', gameState) // Debugging line
-  }
-
-  // Update the game state in localStorage whenever it changes
-  useEffect(() => {
-    if (correctAnswers || incorrectAnswers || feedback || gameOver) {
-      console.log('State updated, saving to localStorage...') // Debugging line
-      saveGameState(correctAnswers, incorrectAnswers, score, gameOver, feedback)
-    }
-  }, [correctAnswers, incorrectAnswers, feedback, gameOver, score])
 
   return (
     <div className="text-center">

@@ -29,51 +29,65 @@ interface Shape {
 export default function ColorMatchingGame() {
   const [shapes, setShapes] = useState<Shape[]>([])
   const [slots, setSlots] = useState<typeof colors[0][]>([])
-  const [correctAnswers, setCorrectAnswers] = useState(0) // Track correct answers
-  const [incorrectAnswers, setIncorrectAnswers] = useState(0)  // Track incorrect answers
-  const [score, setScore] = useState(0) // The final score
+  const [correctAnswers, setCorrectAnswers] = useState(0)
+  const [incorrectAnswers, setIncorrectAnswers] = useState(0)
+  const [score, setScore] = useState(0)
   const [gameOver, setGameOver] = useState(false)
   const [feedback, setFeedback] = useState<{ message: string, isCorrect: boolean } | null>(null)
   const [selectedShape, setSelectedShape] = useState<Shape | null>(null)
-  const [storedScores, setStoredScores] = useState<{ [key: string]: { level: string, score: number, correctAnswers: number, incorrectAnswers: number, totalQuestions: number, timestamp: string }[] }>({})
 
   useEffect(() => {
     startNewGame()
-    loadScoresFromLocalStorage()
   }, [])
 
   useEffect(() => {
-    // Only save score when the game is over
     if (gameOver) {
-      saveScoreToLocalStorage()  // Save score after game over
+      saveScoreToLocalStorage()
     }
-  }, [gameOver, correctAnswers, incorrectAnswers]) // Trigger when gameOver or score states change
+  }, [gameOver])
 
-  const loadScoresFromLocalStorage = () => {
-    const scores = localStorage.getItem('colorMatchingGameScores')
-    if (scores) {
-      setStoredScores(JSON.parse(scores))
-    }
+  const getTodayKey = () => {
+    const today = new Date()
+    const year = today.getFullYear()
+    const month = String(today.getMonth() + 1).padStart(2, '0')
+    const day = String(today.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
   }
 
   const saveScoreToLocalStorage = () => {
-    const today = new Date().toISOString().split('T')[0]
-    const newScore = {
-      level: "Level 1", // You can dynamically change levels if required
-      score: correctAnswers - incorrectAnswers, // Final score
-      correctAnswers, // The latest correct answers
-      incorrectAnswers, // The latest incorrect answers
-      totalQuestions: 5, // Set total questions accordingly
-      timestamp: new Date().toISOString()
+    const todayKey = getTodayKey()
+    const currentData = JSON.parse(localStorage.getItem('colorMatchingGameScores') || '[]')
+
+    const matchScore = correctAnswers - incorrectAnswers
+    const averageScore = correctAnswers + incorrectAnswers > 0 ? matchScore / (correctAnswers) : 0
+
+    const newMatch = {
+      match: currentData.length > 0 ? currentData[currentData.length - 1].matches.length + 1 : 1,
+      score: matchScore,
+      correct: correctAnswers,
+      incorrect: incorrectAnswers,
+      totalQuestions: 5,
+      averageScore: averageScore.toFixed(2),
     }
 
-    // Check if today's data exists and replace it
-    const updatedScores = { ...storedScores }
-    updatedScores[today] = [newScore] // Replace the existing score data for today
+    if (currentData.length === 0 || currentData[currentData.length - 1].date !== todayKey) {
+      currentData.push({
+        date: todayKey,
+        TotalMatches: 1,
+        TotalAverageScore: newMatch.averageScore,
+        matches: [newMatch]
+      })
+    } else {
+      currentData[currentData.length - 1].matches.push(newMatch)
+      currentData[currentData.length - 1].TotalMatches = currentData[currentData.length - 1].matches.length
+      const totalAverageScore = (
+        currentData[currentData.length - 1].matches.reduce((sum, match) => sum + parseFloat(match.averageScore), 0) /
+        currentData[currentData.length - 1].matches.length
+      ).toFixed(2)
+      currentData[currentData.length - 1].TotalAverageScore = totalAverageScore
+    }
 
-    // Update local storage with the new score data
-    localStorage.setItem('colorMatchingGameScores', JSON.stringify(updatedScores))
-    setStoredScores(updatedScores)
+    localStorage.setItem('colorMatchingGameScores', JSON.stringify(currentData))
   }
 
   const startNewGame = () => {
@@ -82,9 +96,9 @@ export default function ColorMatchingGame() {
     const newSlots = [...gameColors].sort(() => Math.random() - 0.5)
     setShapes(newShapes)
     setSlots(newSlots)
-    setCorrectAnswers(0)  // Reset correct answers count
-    setIncorrectAnswers(0)  // Reset incorrect answers count
-    setScore(0)  // Reset score
+    setCorrectAnswers(0)
+    setIncorrectAnswers(0)
+    setScore(0)
     setGameOver(false)
     setFeedback(null)
     setSelectedShape(null)
@@ -99,7 +113,7 @@ export default function ColorMatchingGame() {
 
     if (selectedShape.color.name === targetColor.name) {
       setShapes(shapes.filter(s => s.id !== selectedShape.id))
-      setCorrectAnswers(correctAnswers + 1) // Increment correct answers
+      setCorrectAnswers(correctAnswers + 1)
       setFeedback({ message: "Correct! Great job!", isCorrect: true })
       if (shapes.length === 1) {
         setGameOver(true)
@@ -107,7 +121,7 @@ export default function ColorMatchingGame() {
       }
     } else {
       setFeedback({ message: "Oops! Try again!", isCorrect: false })
-      setIncorrectAnswers(incorrectAnswers + 1)  // Increment incorrect answers
+      setIncorrectAnswers(incorrectAnswers + 1)
       shakeAnimation()
     }
     setSelectedShape(null)
@@ -142,10 +156,10 @@ export default function ColorMatchingGame() {
             <DialogHeader>
               <DialogTitle>How to Play Color Matching Game</DialogTitle>
               <DialogDescription>
-                1. Click on a colored circle to select it.<br/>
-                2. Then click on the matching colored square.<br/>
-                3. Match all colors correctly to win the game.<br/>
-                4. If you make a mistake, you can try again!<br/>
+                1. Click on a colored circle to select it.<br />
+                2. Then click on the matching colored square.<br />
+                3. Match all colors correctly to win the game.<br />
+                4. If you make a mistake, you can try again!<br />
                 Have fun and learn your colors!
               </DialogDescription>
             </DialogHeader>

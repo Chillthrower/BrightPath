@@ -14,8 +14,8 @@ export default function Book({ storyData }: { storyData: string }) {
 
   const pages = storyData.response.split('\n\n').map((paragraph, index) => ({
     content: paragraph.trim(),
-    image: `/Images/Image${index}.png` // Dynamically load images based on index
-  }));  
+    image: "/placeholder.svg" // You can change this to a dynamic image URL if needed
+  }));
 
   const turnPage = (direction: 'left' | 'right') => {
     if (isFlipping) return

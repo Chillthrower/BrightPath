@@ -21,32 +21,62 @@ const levels = [
   { name: 'Level 3', patternLength: 7, speed: 600 },
 ]
 
+interface GameMatch {
+  match: number
+  score: number
+  correct: number
+  incorrect: number
+  totalQuestions: number
+  averageScore: number
+}
+
+interface DayRecord {
+  date: string
+  TotalMatches: number
+  TotalAverageScore: number
+  matches: GameMatch[]
+}
+
 export default function MusicalPatternsGame() {
   const [currentLevel, setCurrentLevel] = useState(0)
   const [pattern, setPattern] = useState<string[]>([])
   const [playerPattern, setPlayerPattern] = useState<string[]>([])
   const [isPlaying, setIsPlaying] = useState(false)
-  const [gameData, setGameData] = useState(() => {
-    // Retrieve the game data from localStorage or initialize it if not present
-    const storedGameData = localStorage.getItem('MusicalPatternsGame')
-    return storedGameData
-      ? JSON.parse(storedGameData)
-      : { score: 0, totalCorrect: 0, totalIncorrect: 0 }
-  })
   const [gameOver, setGameOver] = useState(false)
   const [feedback, setFeedback] = useState<string | null>(null)
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null)
-  const [timeRemaining, setTimeRemaining] = useState<number>(30) // 30 seconds timer for the entire level
+  const [timeRemaining, setTimeRemaining] = useState<number>(30)
   const [timerActive, setTimerActive] = useState<boolean>(false)
+  const [gameData, setGameData] = useState(() => {
+    const today = new Date().toISOString().split('T')[0]
+    const storedData = localStorage.getItem('musicalGameScore')
+    const parsedData: DayRecord[] = storedData ? JSON.parse(storedData) : []
+    
+    // Find today's record or create a new one
+    const todayRecord = parsedData.find(record => record.date === today)
+    if (!todayRecord) {
+      return {
+        correct: 0,
+        incorrect: 0,
+        score: 0,
+        match: 1,
+        totalQuestions: 0
+      }
+    }
+    
+    const lastMatch = todayRecord.matches[todayRecord.matches.length - 1]
+    return {
+      correct: lastMatch.correct,
+      incorrect: lastMatch.incorrect,
+      score: lastMatch.score,
+      match: lastMatch.match,
+      totalQuestions: lastMatch.totalQuestions
+    }
+  })
 
   useEffect(() => {
     generatePattern()
   }, [currentLevel])
-
-  useEffect(() => {
-    // Save game data to localStorage every time it changes
-    localStorage.setItem('MusicalPatternsGame', JSON.stringify(gameData))
-  }, [gameData])
 
   useEffect(() => {
     if (timerActive && timeRemaining > 0) {
@@ -59,8 +89,67 @@ export default function MusicalPatternsGame() {
     }
   }, [timerActive, timeRemaining])
 
+  const updateGameScores = (correct: boolean) => {
+    const today = new Date().toISOString().split('T')[0]
+    const storedData = localStorage.getItem('musicalGameScore')
+    let gameScores: DayRecord[] = storedData ? JSON.parse(storedData) : []
+    
+    // Find or create today's record
+    let todayRecord = gameScores.find(record => record.date === today)
+    if (!todayRecord) {
+      todayRecord = {
+        date: today,
+        TotalMatches: 0,
+        TotalAverageScore: 0,
+        matches: []
+      }
+      gameScores.push(todayRecord)
+    }
+
+    // Update current match data
+    const newGameData = {
+      ...gameData,
+      correct: correct ? gameData.correct + 1 : gameData.correct,
+      incorrect: correct ? gameData.incorrect : gameData.incorrect + 1,
+      score: gameData.score + (correct ? 1 : 0),
+      totalQuestions: gameData.totalQuestions + 1
+    }
+
+    // Create new match record
+    const matchRecord: GameMatch = {
+      match: gameData.match,
+      score: newGameData.score,
+      correct: newGameData.correct,
+      incorrect: newGameData.incorrect,
+      totalQuestions: newGameData.totalQuestions,
+      averageScore: (newGameData.score) / newGameData.totalQuestions
+    }
+
+    // Update or add match to today's records
+    const matchIndex = todayRecord.matches.findIndex(m => m.match === gameData.match)
+    if (matchIndex >= 0) {
+      todayRecord.matches[matchIndex] = matchRecord
+    } else {
+      todayRecord.matches.push(matchRecord)
+    }
+
+    // Update daily totals
+    todayRecord.TotalMatches = todayRecord.matches.length
+    todayRecord.TotalAverageScore = todayRecord.matches.reduce((sum, match) => sum + match.averageScore, 0) / todayRecord.TotalMatches
+
+    // Sort matches by match number
+    todayRecord.matches.sort((a, b) => a.match - b.match)
+
+    // Sort records by date (newest first)
+    gameScores.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+    // Save updated records
+    localStorage.setItem('musicalGameScore', JSON.stringify(gameScores))
+    setGameData(newGameData)
+  }
+
   const generatePattern = () => {
-    setTimeRemaining(30) // Reset the timer for the new level
+    setTimeRemaining(30)
     const newPattern = Array.from({ length: levels[currentLevel].patternLength }, () =>
       instruments[Math.floor(Math.random() * instruments.length)]
     )
@@ -68,7 +157,7 @@ export default function MusicalPatternsGame() {
     setPlayerPattern([])
     setIsPlaying(true)
     playPattern(newPattern)
-    setTimerActive(true) // Start the timer when a new pattern is generated
+    setTimerActive(true)
   }
 
   const playPattern = async (patternToPlay: string[]) => {
@@ -90,19 +179,17 @@ export default function MusicalPatternsGame() {
     if (newPlayerPattern.length === pattern.length) {
       const correct = newPlayerPattern.every((instrument, index) => instrument === pattern[index])
       setIsCorrect(correct)
+      updateGameScores(correct)
 
       if (correct) {
-        const newGameData = {
-          ...gameData,
-          score: gameData.score + 1,
-          totalCorrect: gameData.totalCorrect + 1,
-        }
-        setGameData(newGameData)
-
         setFeedback('Correct! Great job!')
         if (gameData.score + 1 === 3 && currentLevel < levels.length - 1) {
           setCurrentLevel(currentLevel + 1)
-          setGameData(prev => ({ ...prev, score: 0 })) // Reset score after completing level
+          setGameData(prev => ({ 
+            ...prev, 
+            score: 0,
+            match: prev.match + 1 
+          }))
         } else if (gameData.score + 1 === 3 && currentLevel === levels.length - 1) {
           setGameOver(true)
           triggerConfetti()
@@ -110,11 +197,6 @@ export default function MusicalPatternsGame() {
           setTimeout(generatePattern, 1500)
         }
       } else {
-        const newGameData = {
-          ...gameData,
-          totalIncorrect: gameData.totalIncorrect + 1,
-        }
-        setGameData(newGameData)
         setFeedback('Oops! Try again!')
         setTimeout(() => {
           setIsCorrect(null)
@@ -144,9 +226,10 @@ export default function MusicalPatternsGame() {
       <div className="flex justify-between items-center mb-4">
         <p className="text-xl">{levels[currentLevel].name}</p>
         <p className="text-xl">Score: {gameData.score}/3</p>
-        <p className="text-xl">Correct: {gameData.totalCorrect}</p>
-        <p className="text-xl">Incorrect: {gameData.totalIncorrect}</p>
-        <p className="text-xl">Time Remaining: {timeRemaining}s</p>
+        <p className="text-xl">Correct: {gameData.correct}</p>
+        <p className="text-xl">Incorrect: {gameData.incorrect}</p>
+        <p className="text-xl">Match: {gameData.match}</p>
+        <p className="text-xl">Time: {timeRemaining}s</p>
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline">How to Play</Button>
