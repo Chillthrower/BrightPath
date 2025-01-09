@@ -50,10 +50,14 @@ export default function VideoChat() {
           chunksRef.current.push(e.data)
         }
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 =======
 //video recorder saving section
 >>>>>>> b9a4ef3 (Changes)
+=======
+//video recorder saving section
+>>>>>>> b9a4ef368ed8bab01bf03767743ca9e517832e59
         mediaRecorder.onstop = async () => {
           const blob = new Blob(chunksRef.current, { type: 'video/webm' })
           const url = URL.createObjectURL(blob)
