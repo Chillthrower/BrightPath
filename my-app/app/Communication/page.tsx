@@ -12,6 +12,7 @@ export default function VideoChat() {
   const [messages, setMessages] = useState([])
   const [currentSpeech, setCurrentSpeech] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
+  const [botContent, setBotContent] = useState('')
   const mediaRecorderRef = useRef(null)
   const recognitionRef = useRef(null)
   const chunksRef = useRef([])
@@ -39,6 +40,21 @@ export default function VideoChat() {
     }
   }, [isRecording]) // Ensures re-initialization on dependency changes
 
+  const fetchVideoAnalysis = async () => {
+    try {
+      const response = await fetch("http://127.0.0.1:5000/VideoAnalyzer", {
+        method: "GET",
+      });
+      const data = await response.json();
+      console.log('Video analysis result:', data);
+      return data.response; // Return the response
+    } catch (error) {
+      console.error('Error communicating with the server:', error);
+      return "Sorry, I couldn't analyze the video.";
+    }
+  };
+  
+
   const startRecording = async () => {
     try {
       if (recognitionRef.current) {
@@ -55,7 +71,7 @@ export default function VideoChat() {
           const url = URL.createObjectURL(blob)
           const a = document.createElement('a')
           a.href = url
-          a.download = `video-${Date.now()}.webm`
+          a.download = `video-${Date.now()}.mp4`
           document.body.appendChild(a)
           a.click()
           document.body.removeChild(a)
@@ -75,32 +91,37 @@ export default function VideoChat() {
     }
   }
 
-  const stopRecording = () => {
+  const stopRecording = async () => {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop()
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop())
-      recognitionRef.current.stop()
-      setIsRecording(false)
-
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current.stream.getTracks().forEach((track) => track.stop());
+      recognitionRef.current.stop();
+      setIsRecording(false);
+  
       if (currentSpeech && currentSpeech !== lastMessageRef.current) {
-        lastMessageRef.current = currentSpeech
-        setMessages(prev => [...prev, {
-          type: 'user',
-          content: currentSpeech
-        }])
-
-        setIsProcessing(true)
-        setTimeout(() => {
-          setMessages(prev => [...prev, {
-            type: 'bot',
-            content: 'I have analyzed your video. This is a placeholder response that would normally come from processing your video content.',
-          }])
-          setIsProcessing(false)
-        }, 2000)
+        lastMessageRef.current = currentSpeech;
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "user",
+            content: currentSpeech,
+          },
+        ]);
+  
+        setIsProcessing(true);
+        const botResponse = await fetchVideoAnalysis(); // Fetch bot response
+        setMessages((prev) => [
+          ...prev,
+          {
+            type: "bot",
+            content: botResponse, // Use the fetched response directly
+          },
+        ]);
+        setIsProcessing(false);
       }
-      setCurrentSpeech('')
+      setCurrentSpeech("");
     }
-  }
+  };
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-sky-300 via-sky-200 to-green-200">

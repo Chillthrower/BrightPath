@@ -15,9 +15,9 @@ from huggingface_hub import InferenceClient
 app = Flask(__name__)
 CORS(app)
 
-client = InferenceClient("stabilityai/stable-diffusion-3.5-large-turbo", token="")
+client = InferenceClient("stabilityai/stable-diffusion-3.5-large-turbo", token="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")
 
-genai.configure(api_key="")
+genai.configure(api_key="AIzaSyDQAIa2TUCQedlxNtBxUL-JBZYBv2y3yTo")
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 @app.after_request
@@ -41,12 +41,15 @@ def storyTeller():
 def ImageGen(text):
     ParaList = text.split("\n\n")
     for i in range(len(ParaList) - 1):
-        PromptImage = model.generate_content(f"Generate a scenario based prompt to generate an image based on the following context: {ParaList[i]}")
+        time.sleep(3)
+        PromptImage = model.generate_content(f"Generate a scenario based prompt no more than 20 words to generate an image based on the following context: {ParaList[i]}")
         print(PromptImage.text)
         image = client.text_to_image(PromptImage.text)
         image.save(f"public/Images/Image{i + 1}.png")
     
-    client_1 = InferenceClient("stabilityai/stable-diffusion-3.5-large-turbo", token="")
+    time.sleep(3)
+    
+    client_1 = InferenceClient("stabilityai/stable-diffusion-3.5-large-turbo", token="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")
     PromptImage = model.generate_content(f"Generate a scenario based very short prompt to generate an image based on the following context: {ParaList[3]}")
     image = client_1.text_to_image(PromptImage.text)
     image.save(f"public/Images/Image4.png")
@@ -159,6 +162,36 @@ def aiSuggestionBot():
     """
     
     response = model.generate_content(f"Give a 4 brief suggestions for the parents on how to improve their childs Language Development, Physical Development, Cognitive Skills, communication skills in the form of: {text}")
+    return jsonify({"response": response.text})
+
+@app.route("/VideoAnalyzer", methods=["GET"])
+def videoAnalyzer():
+    video_file_name = "public/Videos/Kirthan2.mp4"
+
+    print(f"Uploading file...")
+    video_file = genai.upload_file(path=video_file_name)
+    print(f"Completed upload: {video_file.uri}")
+
+    while video_file.state.name == "PROCESSING":
+        print('Waiting for video to be processed.')
+        time.sleep(10)
+        video_file = genai.get_file(video_file.name)
+
+    if video_file.state.name == "FAILED":
+        raise ValueError(video_file.state.name)
+    
+    print(f'Video processing complete: ' + video_file.uri)
+
+    prompt = "Your a bot talking to a friend"
+
+    model = genai.GenerativeModel(model_name="models/gemini-1.5-flash")
+
+    # Make the LLM request.
+    print("Making LLM inference request...")
+
+    response = model.generate_content([prompt, video_file], request_options={"timeout": 600})
+    print(response.text)
+
     return jsonify({"response": response.text})
 
 if __name__ == "__main__":
